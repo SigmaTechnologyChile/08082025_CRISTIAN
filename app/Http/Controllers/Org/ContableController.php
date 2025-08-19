@@ -17,6 +17,52 @@ use Carbon\Carbon;
 class ContableController extends Controller
 {
     /**
+     * Registrar movimiento con cuenta de origen y destino
+     */
+    public function registrarMovimiento(Request $request)
+    {
+        $request->validate([
+            'org_id' => 'required|integer',
+            'cuenta_origen' => 'nullable|exists:cuentas,id',
+            'cuenta_destino' => 'nullable|exists:cuentas,id',
+            'categoria' => 'required|exists:categorias,id',
+            'monto' => 'required|numeric|min:0.01',
+            'descripcion' => 'required|string|max:500',
+            'fecha' => 'required|date',
+            'nro_dcto' => 'required|string|max:50'
+        ]);
+
+        \DB::beginTransaction();
+
+        // Crear el movimiento
+        $movimiento = \App\Models\Movimiento::create([
+            'org_id' => $request->org_id,
+            'cuenta_origen_id' => $request->cuenta_origen,
+            'cuenta_destino_id' => $request->cuenta_destino,
+            'categoria_id' => $request->categoria,
+            'monto' => $request->monto,
+            'descripcion' => $request->descripcion,
+            'fecha' => $request->fecha,
+            'nro_dcto' => $request->nro_dcto,
+        ]);
+
+        // Actualizar saldos
+        if ($request->cuenta_origen) {
+            $cuentaOrigen = \App\Models\Cuenta::find($request->cuenta_origen);
+            $cuentaOrigen->saldo_actual -= $request->monto;
+            $cuentaOrigen->save();
+        }
+        if ($request->cuenta_destino) {
+            $cuentaDestino = \App\Models\Cuenta::find($request->cuenta_destino);
+            $cuentaDestino->saldo_actual += $request->monto;
+            $cuentaDestino->save();
+        }
+
+        \DB::commit();
+
+        return redirect()->back()->with('success', 'Movimiento registrado correctamente.');
+    }
+    /**
      * Conciliación automática de movimientos con extractos
      */
     public function conciliarMovimientos(Request $request, $id)
@@ -1100,22 +1146,49 @@ class ContableController extends Controller
 
     public function mostrarLibroCaja($id)
     {
+        // Igualar lógica de totales a libro_caja_tabular
+        $fechaDesde = request('fecha_desde') ?? date('Y-m-01');
+        $fechaHasta = request('fecha_hasta') ?? date('Y-m-d');
         $movimientos = \App\Models\Movimiento::where('org_id', $id)
+            ->where('fecha', '>=', $fechaDesde)
+            ->where('fecha', '<=', $fechaHasta)
             ->orderBy('fecha', 'desc')
             ->get();
         $resumen = $this->getResumenSaldos($id);
         $bancos = \App\Models\Banco::all();
 
-        // Calcular totales para la vista tabular
         $saldoCajaGeneral = $resumen['cuentaCajaGeneralOperativa']->saldo_actual ?? 0;
         $saldoCuentaCorriente1 = $resumen['cuentaCorriente1Operativa']->saldo_actual ?? 0;
         $saldoCuentaCorriente2 = $resumen['cuentaCorriente2Operativa']->saldo_actual ?? 0;
         $saldoCuentaAhorro = $resumen['cuentaAhorroOperativa']->saldo_actual ?? 0;
         $saldoTotal = $saldoCajaGeneral + $saldoCuentaCorriente1 + $saldoCuentaCorriente2 + $saldoCuentaAhorro;
 
-        $totalIngresos = $movimientos->where('tipo', 'ingreso')->sum('monto');
-        $totalEgresos = $movimientos->where('tipo', 'egreso')->sum('monto');
-        $saldoFinal = $saldoTotal + $totalIngresos - $totalEgresos;
+        // Calcular saldo inicial igual que en libro_caja_tabular
+        $saldoInicial = \App\Models\Movimiento::where('org_id', $id)
+            ->where('fecha', '<', $fechaDesde)
+            ->whereIn('tipo', ['ingreso', 'egreso'])
+            ->get()
+            ->reduce(function($saldo, $mov) {
+                if ($mov->tipo === 'ingreso') {
+                    return $saldo + ($mov->monto ?? 0);
+                } else {
+                    return $saldo - ($mov->monto ?? 0);
+                }
+            }, 0);
+
+        $totalIngresos = \App\Models\Movimiento::where('org_id', $id)
+            ->where('fecha', '>=', $fechaDesde)
+            ->where('fecha', '<=', $fechaHasta)
+            ->where('tipo', 'ingreso')
+            ->sum('monto');
+
+        $totalEgresos = \App\Models\Movimiento::where('org_id', $id)
+            ->where('fecha', '>=', $fechaDesde)
+            ->where('fecha', '<=', $fechaHasta)
+            ->where('tipo', 'egreso')
+            ->sum('monto');
+
+        $saldoFinal = $saldoInicial + $totalIngresos - $totalEgresos;
 
         // Detectar si el usuario es CRC
         $usuarioCRC = (auth()->user()->rol ?? '') === 'crc';
@@ -1129,9 +1202,12 @@ class ContableController extends Controller
             'saldoCuentaCorriente2' => $saldoCuentaCorriente2,
             'saldoCuentaAhorro' => $saldoCuentaAhorro,
             'saldoTotal' => $saldoTotal,
+            'saldoInicial' => $saldoInicial,
             'totalIngresos' => $totalIngresos,
             'totalEgresos' => $totalEgresos,
             'saldoFinal' => $saldoFinal,
+            'fechaDesde' => $fechaDesde,
+            'fechaHasta' => $fechaHasta,
             'usuarioCRC' => $usuarioCRC,
         ], $resumen));
     }
@@ -1142,9 +1218,10 @@ class ContableController extends Controller
     private function getResumenSaldos($orgId)
     {
         // Usar directamente la tabla de cuentas operativas (nuevo flujo)
-        $cuentaCajaGeneral = Cuenta::where('org_id', $orgId)->where('tipo', 'caja_general')->first();
-        $cuentaCorriente1 = Cuenta::where('org_id', $orgId)->where('tipo', 'cuenta_corriente_1')->first();
-        $cuentaAhorro = Cuenta::where('org_id', $orgId)->where('tipo', 'cuenta_ahorro')->first();
+    $cuentaCajaGeneral = Cuenta::where('org_id', $orgId)->where('tipo', 'caja_general')->first();
+    $cuentaCorriente1 = Cuenta::where('org_id', $orgId)->where('tipo', 'cuenta_corriente_1')->first();
+    $cuentaCorriente2 = Cuenta::where('org_id', $orgId)->where('tipo', 'cuenta_corriente_2')->first();
+    $cuentaAhorro = Cuenta::where('org_id', $orgId)->where('tipo', 'cuenta_ahorro')->first();
 
         // Obtener configuraciones iniciales para saldos históricos
         $configCaja = ConfiguracionCuentasIniciales::where('org_id', $orgId)->where('tipo_cuenta', 'caja_general')->first();
@@ -1178,9 +1255,11 @@ class ContableController extends Controller
             'saldosIniciales' => $saldosIniciales,
             'cuentaCajaGeneral' => $configCaja, // Configuración inicial para compatibilidad
             'cuentaCorriente1' => $configCorriente,
+            'cuentaCorriente2' => null, // Si tienes configuración inicial, agrégala aquí
             'cuentaAhorro' => $configAhorro,
             'cuentaCajaGeneralOperativa' => $cuentaCajaGeneral, // Cuentas operativas
             'cuentaCorriente1Operativa' => $cuentaCorriente1,
+            'cuentaCorriente2Operativa' => $cuentaCorriente2,
             'cuentaAhorroOperativa' => $cuentaAhorro,
             'totalSaldoInicial' => $noDatos ? null : $totalSaldoInicial,
             'totalSaldoActual' => $noDatos ? null : $totalSaldoActual,
@@ -1196,54 +1275,107 @@ class ContableController extends Controller
     public function balance($id)
     {
         $resumen = $this->getResumenSaldos($id);
-        $movimientos = Movimiento::where('org_id', $id)->orderBy('fecha', 'desc')->get();
-
-        if ($movimientos) {
-            // Procesar totales por categoría de ingresos
-            $categoriasIngresos = [
-                'Cuotas de Incorporación' => $movimientos->where('categoria', 'Cuotas de Incorporación')->sum('monto'),
-                'Consumo de Agua' => $movimientos->where('categoria', 'Consumo de Agua')->sum('monto'),
-                'Otros Ingresos' => $movimientos->where('categoria', 'Otros Ingresos')->sum('monto'),
-                'Multas y Recargos' => $movimientos->where('categoria', 'Multas y Recargos')->sum('monto'),
-            ];
-
-            // Procesar totales por categoría de egresos
-            $categoriasEgresos = [
-                'Giros y Transferencias' => $movimientos->where('categoria', 'Giros y Transferencias')->sum('monto'),
-                'Gastos Operacionales' => $movimientos->where('categoria', 'Gastos Operacionales')->sum('monto'),
-                'Gastos Administrativos' => $movimientos->where('categoria', 'Gastos Administrativos')->sum('monto'),
-                'Mantenimiento' => $movimientos->where('categoria', 'Mantenimiento')->sum('monto'),
-            ];
-
-            // Datos para gráficos
-            $datosIngresos = [
-                'labels' => array_keys($categoriasIngresos),
-                'data' => array_values($categoriasIngresos),
-            ];
-            $datosEgresos = [
-                'labels' => array_keys($categoriasEgresos),
-                'data' => array_values($categoriasEgresos),
-            ];
-
-            // Ratios y análisis financiero
-            $ratioLiquidez = $resumen['totalSaldoActual'] > 0 ? $resumen['totalSaldoActual'] / ($resumen['totalEgresos'] ?: 1) : 1.5;
-            $roe = $resumen['saldoFinal'] > 0 ? ($resumen['saldoFinal'] / ($resumen['totalSaldoInicial'] ?: 1)) * 100 : 12.5;
-            $ratioEndeudamiento = $resumen['totalEgresos'] > 0 ? ($resumen['totalEgresos'] / ($resumen['totalSaldoActual'] ?: 1)) * 100 : 35;
-            $margenOperacional = $resumen['totalIngresos'] > 0 ? (($resumen['totalIngresos'] - $resumen['totalEgresos']) / $resumen['totalIngresos']) * 100 : 18.3;
-
-            // Últimos movimientos (máx 10)
-            $ultimosMovimientos = $movimientos->sortByDesc('fecha')->take(10);
-        } else {
-            $categoriasIngresos = $categoriasEgresos = $datosIngresos = $datosEgresos = [];
-            $ratioLiquidez = $roe = $ratioEndeudamiento = $margenOperacional = 0;
-            $ultimosMovimientos = collect();
+        // Filtros desde request
+        $query = Movimiento::where('org_id', $id);
+        if (request('fecha_inicio')) {
+            $query->where('fecha', '>=', request('fecha_inicio'));
         }
+        if (request('fecha_fin')) {
+            $query->where('fecha', '<=', request('fecha_fin'));
+        }
+        if (request('cuenta')) {
+            $query->where('cuenta_id', request('cuenta'));
+        }
+        if (request('categoria')) {
+            $query->where('categoria_id', request('categoria'));
+        }
+        if (request('tipo')) {
+            $query->where('tipo', request('tipo'));
+        }
+        $movimientos = $query->orderBy('fecha', 'desc')->get();
 
+        // Calcular totales igual que en libro-caja
+        $saldoCajaGeneral = $resumen['cuentaCajaGeneralOperativa']->saldo_actual ?? 0;
+        $saldoCuentaCorriente1 = $resumen['cuentaCorriente1Operativa']->saldo_actual ?? 0;
+        $saldoCuentaCorriente2 = $resumen['cuentaCorriente2Operativa']->saldo_actual ?? 0;
+        $saldoCuentaAhorro = $resumen['cuentaAhorroOperativa']->saldo_actual ?? 0;
+        $saldoTotal = $saldoCajaGeneral + $saldoCuentaCorriente1 + $saldoCuentaCorriente2 + $saldoCuentaAhorro;
+
+        $totalIngresos = $movimientos->where('tipo', 'ingreso')->sum('monto');
+        $totalEgresos = $movimientos->where('tipo', 'egreso')->sum('monto');
+    $saldoFinal = $totalIngresos - $totalEgresos;
+
+        // Poblar categorías de ingresos usando categoria_id y la tabla de categorías
+        $categoriasIngresos = [];
+        $categoriasIngresoDb = Categoria::where('tipo', 'ingreso')->get();
+        foreach ($categoriasIngresoDb as $cat) {
+            $categoriasIngresos[$cat->nombre] = $movimientos->where('tipo', 'ingreso')->where('categoria_id', $cat->id)->sum('monto');
+        }
+        // Sumar ingresos sin categoría
+        $sinCategoria = $movimientos->where('tipo', 'ingreso')->whereNull('categoria_id')->sum('monto');
+        if ($sinCategoria > 0) {
+            $categoriasIngresos['Sin categoría'] = $sinCategoria;
+        }
+        $categoriasEgresos = [];
+        $categoriasEgresoDb = Categoria::where('tipo', 'egreso')->get();
+        foreach ($categoriasEgresoDb as $cat) {
+            $categoriasEgresos[$cat->nombre] = $movimientos->where('tipo', 'egreso')->where('categoria_id', $cat->id)->sum('monto');
+        }
+        // Sumar egresos sin categoría
+        $sinCategoriaEgreso = $movimientos->where('tipo', 'egreso')->whereNull('categoria_id')->sum('monto');
+        if ($sinCategoriaEgreso > 0) {
+            $categoriasEgresos['Sin categoría'] = $sinCategoriaEgreso;
+        }
+        $datosIngresos = [
+            'labels' => array_keys($categoriasIngresos),
+            'data' => array_values($categoriasIngresos),
+        ];
+        $datosEgresos = [
+            'labels' => array_keys($categoriasEgresos),
+            'data' => array_values($categoriasEgresos),
+        ];
+
+        // Ratios y análisis financiero
+        $ratioLiquidez = $saldoTotal > 0 ? $saldoTotal / ($totalEgresos ?: 1) : 1.5;
+        $roe = $saldoFinal > 0 ? ($saldoFinal / ($saldoTotal ?: 1)) * 100 : 12.5;
+        $ratioEndeudamiento = $totalEgresos > 0 ? ($totalEgresos / ($saldoTotal ?: 1)) * 100 : 35;
+        $margenOperacional = $totalIngresos > 0 ? (($totalIngresos - $totalEgresos) / $totalIngresos) * 100 : 18.3;
+
+        $ultimosMovimientos = $movimientos->sortByDesc('fecha')->take(10);
         $cuentas = Cuenta::where('org_id', $id)->get();
         $categorias = Categoria::all();
-    return view('orgs.contable.balance', array_merge([
+        // Obtener saldos reales para conciliación bancaria
+        $cuentaCajaGeneral = $resumen['cuentaCajaGeneralOperativa'] ?? null;
+        $cuentaCorriente1 = $resumen['cuentaCorriente1Operativa'] ?? null;
+        $cuentaCorriente2 = $resumen['cuentaCorriente2Operativa'] ?? null;
+        $cuentaAhorro = $resumen['cuentaAhorroOperativa'] ?? null;
+            // Cálculo de datos mensuales para el gráfico de flujo mensual
+            $meses = [];
+            $ingresosPorMes = [];
+            $egresosPorMes = [];
+            for ($i = 11; $i >= 0; $i--) {
+                $fecha = now()->subMonths($i);
+                $mes = $fecha->format('M Y');
+                $meses[] = $mes;
+                $ingresosPorMes[] = $movimientos->where('tipo', 'ingreso')->whereBetween('fecha', [
+                    $fecha->copy()->startOfMonth(),
+                    $fecha->copy()->endOfMonth()
+                ])->sum('monto');
+                $egresosPorMes[] = $movimientos->where('tipo', 'egreso')->whereBetween('fecha', [
+                    $fecha->copy()->startOfMonth(),
+                    $fecha->copy()->endOfMonth()
+                ])->sum('monto');
+            }
+            $labelsMeses = $meses;
+            $ingresosMensuales = $ingresosPorMes;
+            $egresosMensuales = $egresosPorMes;
+        return view('orgs.contable.balance', [
             'orgId' => $id,
             'movimientos' => $movimientos,
+            'saldoTotal' => $saldoTotal,
+            'totalIngresos' => $totalIngresos,
+            'totalEgresos' => $totalEgresos,
+            'saldoFinal' => $saldoFinal,
             'categoriasIngresos' => $categoriasIngresos,
             'categoriasEgresos' => $categoriasEgresos,
             'datosIngresos' => $datosIngresos,
@@ -1255,7 +1387,14 @@ class ContableController extends Controller
             'ultimosMovimientos' => $ultimosMovimientos,
             'cuentas' => $cuentas,
             'categorias' => $categorias,
-        ], $resumen));
+            'cuentaCajaGeneral' => $cuentaCajaGeneral,
+            'cuentaCorriente1' => $cuentaCorriente1,
+            'cuentaCorriente2' => $cuentaCorriente2,
+            'cuentaAhorro' => $cuentaAhorro,
+                'labelsMeses' => $labelsMeses,
+                'ingresosMensuales' => $ingresosMensuales,
+                'egresosMensuales' => $egresosMensuales,
+        ]);
     }
 
     /**
@@ -1623,13 +1762,13 @@ class ContableController extends Controller
             'SUELDOS/LEYES SOCIALES' => $categoriasEgresos->get('SUELDOS/LEYES SOCIALES', collect())->first(),
             'OTROS GASTOS DE OPERACIÓN' => $categoriasEgresos->get('OTROS GASTOS DE OPERACIÓN', collect())->first(),
             'GASTOS MANTENCION' => $categoriasEgresos->get('GASTOS MANTENCION', collect())->first(),
-            'GASTOS ADMINISTRACION' => $categoriasEgresos->get('GASTOS ADMINISTRACION', collect())->first(),
+            'GASTOS ADMINISTRATIVOS' => $categoriasEgresos->get('GASTOS ADMINISTRATIVOS', collect())->first(),
             'GASTOS MEJORAMIENTO' => $categoriasEgresos->get('GASTOS MEJORAMIENTO', collect())->first(),
             'OTROS EGRESOS' => $categoriasEgresos->get('OTROS EGRESOS', collect())->first(),
             'DEPÓSITOS' => null, // Los depósitos son transferencias, no categorías
         ];
         
-        // Obtener movimientos para mostrar en la tabla
+        // Obtener movimientos para mostrar en la tabla, excluyendo deudas
         $movimientos = \App\Models\Movimiento::with(['categoria', 'cuentaOrigen', 'cuentaDestino'])
             ->where(function($q) use ($id) {
                 $q->whereHas('cuentaOrigen', function($sq) use ($id) {
@@ -1640,9 +1779,25 @@ class ContableController extends Controller
             })
             ->orderBy('fecha', 'desc')
             ->get()
+            ->filter(function($movimiento) {
+                $desc = mb_strtolower($movimiento->descripcion ?? '');
+                return !(
+                    str_contains($desc, 'deuda por servicio') ||
+                    str_contains($desc, 'deuda generada por lectura') ||
+                    str_contains($desc, 'sincronización') ||
+                    str_contains($desc, 'no ha sido recaudado') ||
+                    str_contains($desc, 'no recaudado') ||
+                    str_contains($desc, 'no ha sido cobrado') ||
+                    str_contains($desc, 'no cobrado')
+                );
+            })
             ->map(function($movimiento) use ($columnasIngresos, $columnasEgresos) {
                 try {
                     $mapeado = $this->mapearMovimientoTabular($movimiento, $columnasIngresos, $columnasEgresos);
+                    // Asegurar que creado_en esté presente
+                    if (!property_exists($mapeado, 'creado_en')) {
+                        $mapeado->creado_en = $movimiento->creado_en ?? null;
+                    }
                     // Asegurar que todas las propiedades requeridas existen
                     $props = [
                         'id', 'fecha', 'descripcion', 'tipo', 'monto',
@@ -1671,6 +1826,7 @@ class ContableController extends Controller
                     return (object) [
                         'id' => $movimiento->id,
                         'fecha' => $movimiento->fecha,
+                        'creado_en' => $movimiento->creado_en ?? null,
                         'descripcion' => $movimiento->descripcion,
                         'tipo' => $movimiento->tipo,
                         'monto' => $movimiento->monto,
@@ -1929,6 +2085,16 @@ class ContableController extends Controller
 
         $monto = $movimiento->monto;
 
+        // Asignar grupo 'Total Consumo' si es ingreso y pago por POS o Efectivo
+        if ($movimiento->tipo === 'ingreso' && isset($movimiento->descripcion)) {
+            $desc = mb_strtolower($movimiento->descripcion);
+            $esPagoServicio = str_contains($desc, 'pago de servicio nro');
+            $esPos = isset($movimiento->cuenta_destino_id) && ($movimiento->cuenta_destino_id == 6);
+            $esEfectivo = isset($movimiento->cuenta_destino_id) && ($movimiento->cuenta_destino_id == 5);
+            if ($esPagoServicio && ($esPos || $esEfectivo)) {
+                $movimiento->grupo = 'Total Consumo';
+            }
+        }
         // Mapear según el tipo y subtipo del movimiento
         if ($movimiento->tipo === 'transferencia') {
             // Asegurar que la relación categoria esté cargada
@@ -1976,30 +2142,25 @@ class ContableController extends Controller
                 $grupo = $movimiento->categoria;
             }
             
-            if ($grupo) {
-                switch ($grupo) {
-                    case 'Total Consumo':
-                    case 'TOTAL CONSUMO':
-                        $item->total_consumo = $monto;
-                        break;
-                    case 'Cuotas Incorporación':
-                    case 'CUOTAS INCORPORACION':
-                        $item->cuotas_incorporacion = $monto;
-                        break;
-                    case 'Otros Ingresos':
-                    case 'OTROS INGRESOS':
-                        $item->otros_ingresos = $monto;
-                        break;
-                    case 'Giros':
-                        $item->giros = $monto;
-                        break;
-                    default:
-                        // Si el grupo no coincide, lo asignamos a otros_ingresos
-                        $item->otros_ingresos = $monto;
-                        break;
-                }
-            } else {
+            if ($grupo === 'Total Consumo' || $grupo === 'TOTAL CONSUMO') {
+                $item->total_consumo = $monto;
+            } else if ($grupo === 'Cuotas Incorporación' || $grupo === 'CUOTAS INCORPORACION') {
+                $item->cuotas_incorporacion = $monto;
+            } else if ($grupo === 'Otros Ingresos' || $grupo === 'OTROS INGRESOS') {
                 $item->otros_ingresos = $monto;
+            } else if ($grupo === 'Giros') {
+                $item->giros = $monto;
+            } else {
+                // Si es pago de servicio por POS o Efectivo, mostrar solo en Total Consumo
+                $desc = mb_strtolower($movimiento->descripcion);
+                $esPagoServicio = str_contains($desc, 'pago de servicio nro');
+                $esPos = isset($movimiento->cuenta_destino_id) && ($movimiento->cuenta_destino_id == 6);
+                $esEfectivo = isset($movimiento->cuenta_destino_id) && ($movimiento->cuenta_destino_id == 5);
+                if ($esPagoServicio && ($esPos || $esEfectivo)) {
+                    $item->total_consumo = $monto;
+                } else {
+                    $item->otros_ingresos = $monto;
+                }
             }
         } elseif ($movimiento->tipo === 'egreso') {
             // Asignar el monto estrictamente a la columna cuyo nombre coincide con el grupo

@@ -205,57 +205,7 @@ tbody tr:hover {
   </div>
   
   <div class="conciliacion-grid">
-                    ${{ number_format((float)$movimiento->monto, 0, ',', '.') }}
-      <h3><i class="bi bi-journal-check"></i> Movimientos Registrados</h3>
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>N° Comp.</th>
-              <th>Descripción</th>
-              <th>Cuenta</th>
-              <th>Monto</th>
-              <th>Conciliado</th>
-            </tr>
-          </thead>
-          <tbody id="tablaConciliacion" style="text-align: center;">
-            @if(isset($movimientos) && count($movimientos) > 0)
-              @foreach($movimientos->take(10) as $index => $movimiento)
-              <tr>
-                <td>{{ (string)$movimiento->fecha }}</td>
-                <td>{{ str_pad($index + 1, 4, '0', STR_PAD_LEFT) }}</td>
-                <td>{{ Str::limit($movimiento->descripcion ?? 'Movimiento bancario', 30) }}</td>
-                <td>{{ $movimiento->cuenta ?? 'Cta. Corriente' }}</td>
-                <td>
-                  @php
-                    $monto = ($movimiento->total_consumo ?? 0) + ($movimiento->cuotas_incorporacion ?? 0) - ($movimiento->giros ?? 0);
-                  @endphp
-                  @if(is_numeric($monto))
-                    ${{ number_format(abs($monto), 0, ',', '.') }}
-                  @else
-                    <span style="color: var(--warning-color);">Sin datos</span>
-                  @endif
-                </td>
-                <td>
-                  @php
-                    $estados = ['Conciliado', 'Pendiente'];
-                    $estado = $estados[array_rand($estados)];
-                  @endphp
-                  <span style="color: {{ $estado == 'Conciliado' ? 'var(--success-color)' : 'var(--warning-color)' }};">
-                    {{ $estado }}
-                  </span>
-                </td>
-              </tr>
-              @endforeach
-            @else
-              <tr>
-                <td colspan="6" style="text-align: center; color: #718096;">No hay movimientos registrados</td>
-              </tr>
-            @endif
-          </tbody>
-        </table>
-      </div>
+  <!-- Se eliminó el formulario de movimientos registrados -->
     </div>
     
     <div class="conciliacion-card">

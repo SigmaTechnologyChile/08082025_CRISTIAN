@@ -22,7 +22,7 @@
   <div class="saldo-section">
     <div class="saldo-grid">
       <div class="saldo-item">
-        <label>Saldo Caja General</label>
+        <label>Saldo Caja GeneralAAAAAAAA</label>
         <input id="saldoCajaGeneral" type="text" value="$0" readonly>
       </div>
       <div class="saldo-item">

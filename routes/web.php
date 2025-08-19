@@ -596,8 +596,9 @@ Route::prefix('org')->name('orgs.')->group(function () {
                 'tabla_locations' => \DB::table('locations')->where('org_id', $orgId)->count() . ' ubicaciones en org'
             ]
         ]);
-    })->name('operator.debug.members')
-      ->where(['id' => '[0-9]+', 'sectorId' => '[0-9]+']);
+    })
+    ->name('operator.debug.members')
+    ->where(['id' => '[0-9]+', 'sectorId' => '[0-9]+']);
 
 
 
@@ -673,4 +674,6 @@ Route::get('pos-integrado', function () {
     return view('pos-integrate');
 
 });
+
+Route::post('orgs/contable/{id}/movimientos/registrar', [App\Http\Controllers\Org\ContableController::class, 'registrarMovimiento'])->name('movimientos.registrar');
 

@@ -296,119 +296,24 @@ td {
   margin-top: 30px;
   flex-wrap: wrap;
 }
-
-/* RESPONSIVE DESIGN */
-@media (max-width: 900px) {
-  .libro-caja-section {
-    padding: 10px;
-  }
-  .section-header h1 {
-    font-size: 2rem;
-  }
-  .totals-container {
-    flex-direction: column;
-    gap: 10px;
-  }
-  .total-card {
-    min-width: 180px;
-    padding: 15px;
-  }
-  .table-container {
-    padding: 10px;
-  }
-  .table-header h2 {
-    font-size: 1.2rem;
-  }
-  th, td {
-    padding: 8px 4px;
-    font-size: 12px;
-  }
-}
-
-@media (max-width: 600px) {
-  .libro-caja-section {
-    padding: 5px;
-  }
-  .section-header {
-    flex-direction: column;
-    gap: 10px;
-    margin: 10px 0 20px;
-  }
-  .section-header h1 {
-    font-size: 1.3rem;
-    padding-bottom: 8px;
-  }
-  .section-header h1::after {
-    width: 80px;
-    height: 2px;
-  }
-  .section-header p {
-    font-size: 0.9rem;
-    max-width: 100%;
-  }
-  .saldo-section {
-    padding: 10px;
-    border-radius: 8px;
-  }
-  .saldo-grid {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-  .saldo-item {
-    padding: 8px;
-    border-radius: 6px;
-  }
-  .totals-container {
-    flex-direction: column;
-    gap: 8px;
-    margin-bottom: 15px;
-  }
-  .total-card {
-    min-width: 120px;
-    padding: 10px;
-    font-size: 0.9rem;
-  }
-  .total-card h3 {
-    font-size: 1rem;
-    margin-bottom: 8px;
-  }
-  .total-card .value {
-    font-size: 1.2rem;
-  }
-  .table-container {
-    padding: 5px;
-    border-radius: 6px;
-  }
-  .table-header {
-    flex-direction: column;
-    gap: 8px;
-    margin-bottom: 10px;
-  }
-  .table-header h2 {
-    font-size: 1rem;
-  }
-  .filters {
-    flex-direction: column;
-    gap: 6px;
-  }
-  th, td {
-    padding: 4px 2px;
-    font-size: 10px;
-  }
-  table {
-    min-width: 600px;
-  }
-}
 </style>
 
 @section('content')
 <div class="libro-caja-section">
     <!-- Header de la sección -->
-  <div class="section-header">
-    <div>
-      <h1>Libro de Caja Tabular</h1>
-      <p>Registro diario de todos los movimientos financieros</p>
-    </div>
+    <div class="section-header">
+        <div>
+            <h1>Libro de Caja Tabular</h1>
+            <p>Registro diario de todos los movimientos financieros</p>
+        </div>
+    <a href="{{ route('logout') }}" class="action-button volver"
+       onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+      <i class="bi bi-box-arrow-right"></i> Salir
+    </a>
+    <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+      @csrf
+    </form>
+        </a>
     </div>
     
     <!-- Sección de saldos -->
@@ -439,18 +344,27 @@ td {
     
     <!-- TOTALES EN FILA HORIZONTAL -->
     <div class="totals-container">
-        <div class="total-card ingresos">
-            <h3>Total Ingresos</h3>
-            <div class="value">${{ number_format($totalIngresos ?? 0, 0, ',', '.') }}</div>
-        </div>
-        <div class="total-card egresos">
-            <h3>Total Egresos</h3>
-            <div class="value">${{ number_format($totalEgresos ?? 0, 0, ',', '.') }}</div>
-        </div>
-        <div class="total-card saldo">
-            <h3>Saldo Final</h3>
-            <div class="value">${{ number_format($saldoFinal ?? 0, 0, ',', '.') }}</div>
-        </div>
+    <div class="total-card ingresos">
+      <h3>Total Ingresos</h3>
+      <div class="value">
+        ${{ number_format(
+          $movimientos->where('tipo', 'ingreso')->sum('monto'), 0, ',', '.') }}
+      </div>
+    </div>
+    <div class="total-card egresos">
+      <h3>Total Egresos</h3>
+      <div class="value">
+        ${{ number_format(
+          $movimientos->where('tipo', 'egreso')->sum('monto'), 0, ',', '.') }}
+      </div>
+    </div>
+    <div class="total-card saldo">
+      <h3>Saldo Final</h3>
+      <div class="value">
+        ${{ number_format(
+          $movimientos->where('tipo', 'ingreso')->sum('monto') - $movimientos->where('tipo', 'egreso')->sum('monto'), 0, ',', '.') }}
+      </div>
+    </div>
     </div>
     
     <!-- Tabla de movimientos -->
@@ -483,7 +397,7 @@ td {
                         <th colspan="9" class="egresos-header">Salidas Egresos</th>
                     </tr>
                     <tr>
-                        
+                        <th>Acciones</th>
                         <th>Fecha</th>
                         <th>Descripción</th>
                         <th>Total Consumo</th>
@@ -503,9 +417,27 @@ td {
                     </tr>
                 </thead>
                 <tbody>
-          @foreach($movimientos as $movimiento)
+          @foreach($movimientos->sortByDesc('creado_en') as $movimiento)
           <tr>
-                        <td>{{ date('d/m/Y', strtotime($movimiento->fecha)) }}</td>
+            <td>
+              <button class="btn btn-sm btn-info" disabled style="pointer-events: none; opacity: 0.5;">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="btn btn-sm btn-danger ms-1" disabled style="pointer-events: none; opacity: 0.5;">
+                <i class="bi bi-trash"></i>
+              </button>
+            </td>
+            <td>
+              @if(!empty($movimiento->creado_en))
+                @if(!empty($movimiento->creado_en))
+                  {{ date('d-m-Y H:i:s', strtotime($movimiento->creado_en)) }}
+                @else
+                  {{ $movimiento->fecha ?? '-' }}
+                @endif
+              @else
+                -
+              @endif
+            </td>
             <td style="text-align: left;">{{ $movimiento->descripcion }}</td>
             <!-- INGRESOS -->
             <td class="{{ ($movimiento->tipo == 'ingreso' && $movimiento->grupo == 'Total Consumo') ? 'ingreso-cell' : '' }}">
@@ -564,6 +496,16 @@ td {
         </div>
     </div>
     
-  <!-- Botón de retorno eliminado -->
+    <!-- Botón de retorno -->
+    <div class="button-group">
+    <a href="{{ route('logout') }}" class="action-button volver"
+       onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+      <i class="bi bi-box-arrow-right"></i> Salir
+    </a>
+    <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+      @csrf
+    </form>
+        </a>
+    </div>
 </div>
 @endsection

@@ -479,31 +479,28 @@
       <div class="summary-item ingresos">
         <div class="label">Total Ingresos</div>
         <div class="value" id="balanceTotalIngresos">
-          @if(isset($totalIngresos))
-            ${{ number_format($totalIngresos, 0, ',', '.') }}
-          @else
-            <span class="text-muted">Sin datos</span>
-          @endif
+          @php
+            $ingresosBlade = isset($totalIngresos) ? $totalIngresos : ($movimientos->where('tipo', 'ingreso')->sum('monto') ?? 0);
+          @endphp
+          ${{ number_format($ingresosBlade, 0, ',', '.') }}
         </div>
       </div>
       <div class="summary-item egresos">
         <div class="label">Total Egresos</div>
         <div class="value" id="balanceTotalEgresos">
-          @if(isset($totalEgresos))
-            ${{ number_format($totalEgresos, 0, ',', '.') }}
-          @else
-            <span class="text-muted">Sin datos</span>
-          @endif
+          @php
+            $egresosBlade = isset($totalEgresos) ? $totalEgresos : ($movimientos->where('tipo', 'egreso')->sum('monto') ?? 0);
+          @endphp
+          ${{ number_format($egresosBlade, 0, ',', '.') }}
         </div>
       </div>
       <div class="summary-item saldo">
         <div class="label">Saldo Final</div>
         <div class="value" id="balanceSaldoFinal">
-          @if(isset($saldoFinal))
-            ${{ number_format($saldoFinal, 0, ',', '.') }}
-          @else
-            <span class="text-muted">Sin datos</span>
-          @endif
+          @php
+            $saldoBlade = isset($saldoFinal) ? $saldoFinal : (($saldoTotal ?? 0) + ($ingresosBlade ?? 0) - ($egresosBlade ?? 0));
+          @endphp
+          ${{ number_format($saldoBlade, 0, ',', '.') }}
         </div>
       </div>
     </div>
@@ -529,20 +526,43 @@
     @if(isset($roe))
     <div class="ratio-card">
       <h4><i class="bi bi-graph-up"></i> ROE</h4>
-      <div class="ratio-value">{{ number_format($roe, 1) }}%</div>
-      <div class="ratio-description">Rentabilidad del patrimonio</div>
+      <div class="ratio-value">
+        @if($saldoFinal > 0 && $saldoTotal > 0)
+          {{ number_format($roe, 1) }}%
+        @else
+          <span class="text-muted">Sin datos</span>
+        @endif
+      </div>
+      <div class="ratio-description">
+        Rentabilidad del patrimonio
+        @if($saldoFinal > 0 && $saldoTotal > 0)
+          &nbsp;
+        @else
+          <span class="text-muted">No aplica</span>
+        @endif
+      </div>
     </div>
     @endif
     @if(isset($ratioEndeudamiento))
     <div class="ratio-card">
       <h4><i class="bi bi-shield-check"></i> Endeudamiento</h4>
-      <div class="ratio-value">{{ number_format($ratioEndeudamiento, 1) }}%</div>
+      <div class="ratio-value">
+        @if($totalEgresos > 0 && $saldoTotal > 0)
+          {{ number_format($ratioEndeudamiento, 1) }}%
+        @else
+          <span class="text-muted">Sin datos</span>
+        @endif
+      </div>
       <div class="ratio-description">
         Proporción de deuda sobre activos
-        @if($ratioEndeudamiento <= 40)
-          <span style="color: var(--success-color);">✓ Bajo riesgo</span>
+        @if($totalEgresos > 0 && $saldoTotal > 0)
+          @if($ratioEndeudamiento <= 40)
+            <span style="color: var(--success-color);">✓ Bajo riesgo</span>
+          @else
+            <span style="color: var(--danger-color);">⚠ Alto riesgo</span>
+          @endif
         @else
-          <span style="color: var(--danger-color);">⚠ Alto riesgo</span>
+          <span class="text-muted">No aplica</span>
         @endif
       </div>
     </div>
@@ -550,8 +570,19 @@
     @if(isset($margenOperacional))
     <div class="ratio-card">
       <h4><i class="bi bi-percent"></i> Margen Operacional</h4>
-      <div class="ratio-value">{{ number_format($margenOperacional, 1) }}%</div>
-      <div class="ratio-description">Eficiencia operacional</div>
+      <div class="ratio-value">
+        @if($totalIngresos > 0)
+          {{ number_format($margenOperacional, 1) }}%
+        @else
+          <span class="text-muted">Sin datos</span>
+        @endif
+      </div>
+      <div class="ratio-description">
+        Eficiencia operacional
+        @if($totalIngresos <= 0)
+          <span class="text-muted">No aplica</span>
+        @endif
+      </div>
     </div>
     @endif
   </div>
@@ -568,7 +599,11 @@
   <div class="dashboard-grid">
     <div class="chart-card">
       <h3><i class="bi bi-pie-chart"></i> Distribución de Ingresos</h3>
-      <canvas id="ingresosChart"></canvas>
+      @if(isset($datosIngresos['data']) && count($datosIngresos['data']) > 0 && array_sum($datosIngresos['data']) > 0)
+        <canvas id="ingresosChart"></canvas>
+      @else
+        <div class="ratio-description text-muted">Sin datos para ingresos</div>
+      @endif
     </div>
     <div class="chart-card">
       <h3><i class="bi bi-pie-chart-fill"></i> Distribución de Egresos</h3>
@@ -627,33 +662,34 @@
         
         <div class="balance-card">
             <h3><i class="bi bi-clock-history"></i> Últimos Movimientos</h3>
-            {{-- COMENTADO: tabla movimientos eliminada --}}
-            @if(false) {{-- Condición deshabilitada temporalmente --}}
-                <div style="overflow-x: auto;">
-                    <table class="movements-table">
-                        <thead>
-                            <tr>
-                                <th>Fecha</th>
-                                <th>Descripción</th>
-                                <th>Monto</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {{-- Tabla temporal vacía mientras se restaura funcionalidad --}}
-                            <tr>
-                                <td colspan="3" class="text-center text-muted">
-                                    <em>Datos de movimientos en proceso de restauración</em>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            @else
-                <div style="text-align: center; padding: 30px; color: #718096;">
-                    <i class="bi bi-inbox" style="font-size: 2rem; margin-bottom: 10px; display: block;"></i>
-                    Módulo de movimientos temporalmente deshabilitado
-                </div>
-            @endif
+            <div style="overflow-x: auto;">
+                <table class="movements-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Descripción</th>
+                            <th>Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($ultimosMovimientos as $mov)
+                        <tr>
+                            <td>{{ \Carbon\Carbon::parse($mov->fecha)->format('d/m/Y') }}</td>
+                            <td>{{ $mov->descripcion ?? $mov->detalle ?? '-' }}</td>
+                            <td class="{{ $mov->tipo == 'ingreso' ? 'monto-positivo' : 'monto-negativo' }}">
+                                ${{ number_format($mov->monto, 0, ',', '.') }}
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="3" class="text-center text-muted">
+                                <em>No hay movimientos recientes</em>
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
         
         <div class="balance-card">
@@ -676,7 +712,7 @@
                     <div class="analysis-bar">
                         <span>Proporción ingresos/egresos:</span>
                         @php 
-                            $proporcion = $totalEgresos > 0 ? $totalIngresos / $totalEgresos : 1;
+                            $proporcion = $totalEgresos > 0 ? $totalEgresos / $totalEgresos : 1;
                             $proporcionTexto = number_format($proporcion, 1) . ':1';
                         @endphp
                         <span id="proporcionIngEgr" style="font-weight: 600;">{{ $proporcionTexto }}</span>
@@ -798,16 +834,16 @@ document.addEventListener('DOMContentLoaded', function() {
     new Chart(document.getElementById('flujoChart'), {
         type: 'line',
         data: {
-            labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
+            labels: {!! json_encode($labelsMeses) !!},
             datasets: [{
                 label: 'Ingresos',
-                data: [120000000, 135000000, 128000000, 142000000, 138000000, 145000000],
+                data: {!! json_encode($ingresosMensuales) !!},
                 borderColor: '#48bb78',
                 backgroundColor: 'rgba(72, 187, 120, 0.1)',
                 tension: 0.4
             }, {
                 label: 'Egresos',
-                data: [85000000, 92000000, 88000000, 95000000, 90000000, 87000000],
+                data: {!! json_encode($egresosMensuales) !!},
                 borderColor: '#e53e3e',
                 backgroundColor: 'rgba(229, 62, 62, 0.1)',
                 tension: 0.4
@@ -819,7 +855,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     beginAtZero: true,
                     ticks: {
                         callback: function(value) {
-                            return '$' + (value / 1000000).toFixed(0) + 'M';
+                            return '$' + (value / 1000).toFixed(0) + 'K';
                         }
                     }
                 }
@@ -834,11 +870,21 @@ document.addEventListener('DOMContentLoaded', function() {
             labels: ['Caja General', 'Cta. Cte. 1', 'Cta. Cte. 2', 'Cta. Ahorro'],
             datasets: [{
                 label: 'Saldo Registrado',
-                data: [{{ $cuentaCajaGeneral->saldo_inicial ?? 25000000 }}, {{ $cuentaCorriente1->saldo_inicial ?? 45000000 }}, {{ $cuentaCorriente2->saldo_inicial ?? 18000000 }}, 12000000],
+                data: [
+                    {{ $cuentaCajaGeneral->saldo_actual ?? 0 }},
+                    {{ $cuentaCorriente1->saldo_actual ?? 0 }},
+                    {{ $cuentaCorriente2->saldo_actual ?? 0 }},
+                    {{ $cuentaAhorro->saldo_actual ?? 0 }}
+                ],
                 backgroundColor: '#3182ce'
             }, {
                 label: 'Saldo Bancario',
-                data: [{{ ($cuentaCajaGeneral->saldo_inicial ?? 25000000) * 0.98 }}, {{ ($cuentaCorriente1->saldo_inicial ?? 45000000) * 1.02 }}, {{ ($cuentaCorriente2->saldo_inicial ?? 18000000) * 0.95 }}, 11800000],
+                data: [
+                    {{ $cuentaCajaGeneral->saldo_banco ?? $cuentaCajaGeneral->saldo_actual ?? 0 }},
+                    {{ $cuentaCorriente1->saldo_banco ?? $cuentaCorriente1->saldo_actual ?? 0 }},
+                    {{ $cuentaCorriente2->saldo_banco ?? $cuentaCorriente2->saldo_actual ?? 0 }},
+                    {{ $cuentaAhorro->saldo_banco ?? $cuentaAhorro->saldo_actual ?? 0 }}
+                ],
                 backgroundColor: '#2c5282'
             }]
         },
@@ -848,7 +894,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     beginAtZero: true,
                     ticks: {
                         callback: function(value) {
-                            return '$' + (value / 1000000).toFixed(0) + 'M';
+                            return '$' + (value / 1000).toFixed(0) + 'K';
                         }
                     }
                 }

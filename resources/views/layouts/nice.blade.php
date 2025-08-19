@@ -42,12 +42,7 @@
 
     <link href="https://fonts.gstatic.com" rel="preconnect">
 
-    <link
-        href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Nunito:300,300i,400,400i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i"
-        rel="stylesheet">
-
-
-
+                            {{-- Eliminado enlace Gestión Contable Pro --}}
     <!-- Vendor CSS Files -->
 
     <link href="{{asset('theme/nice/assets/vendor/bootstrap/css/bootstrap.min.css')}}" rel="stylesheet">
@@ -1985,16 +1980,7 @@
                         <ul id="contable-nav" class="nav-content collapse {{ $contableActive ? 'show' : '' }}"
                             data-bs-parent="#sidebar-nav">
 
-                            <li>
-
-                                <a href="{{ route('orgs.libro.caja', ['id' => auth()->user()->org_id]) }}"
-                                    class="{{ $active == 'orgs.libro.caja' ? 'active' : '' }}">
-
-                                    <i class="bi bi-circle"></i><span>Gestión Contable Pro</span>
-
-                                </a>
-
-                            </li>
+                            {{-- Eliminado enlace Gestión Contable Pro --}}
 
                             <li>
                                 <a href="{{ route('cuentas_iniciales.show', ['id' => auth()->user()->org_id]) }}" 
@@ -2511,14 +2497,7 @@
 
                             <li>
 
-                                <a href="{{ route('orgs.libro.caja', ['id' => auth()->user()->org_id]) }}"
-                                    class="{{ $active == 'orgs.libro.caja' ? 'active' : '' }}">
-
-                                    <i class="bi bi-circle"></i><span>Gestión Contable Pro</span>
-
-                                </a>
-
-                            </li>
+                            {{-- Eliminado enlace Gestión Contable Pro --}}
 
                             <li>
                                 <a href="{{ route('cuentas_iniciales.show', ['id' => auth()->user()->org_id]) }}" 
@@ -2730,12 +2709,7 @@
 
                 @endphp
 
-                 <li  class="nav-item">
-                    <a href="{{ route('orgs.libro.caja', ['id' => auth()->user()->org_id]) }}"
-                            class="nav-link {{ $libroCajaActive ? 'active' : '' }}">
-                        <i class="bi bi-circle"></i><span>Gestión Contable Pro</span>
-                    </a>
-                 </li>
+                 {{-- Eliminado enlace Gestión Contable Pro --}}
 
 
             @elseif($user->isOperator() || $perfilId == 5)

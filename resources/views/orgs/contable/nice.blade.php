@@ -1990,7 +1990,7 @@
                                 <a href="{{ route('orgs.libro.caja', ['id' => auth()->user()->org_id]) }}"
                                     class="{{ $active == 'orgs.libro.caja' ? 'active' : '' }}">
 
-                                    <i class="bi bi-circle"></i><span>Gestión Contable Pro</span>
+                                    {{-- Eliminado enlace Gestión Contable Pro --}}
 
                                 </a>
 
@@ -2514,7 +2514,7 @@
                                 <a href="{{ route('orgs.libro.caja', ['id' => auth()->user()->org_id]) }}"
                                     class="{{ $active == 'orgs.libro.caja' ? 'active' : '' }}">
 
-                                    <i class="bi bi-circle"></i><span>Gestión Contable Pro</span>
+                                    {{-- Eliminado enlace Gestión Contable Pro --}}
 
                                 </a>
 
@@ -2733,7 +2733,7 @@
                  <li  class="nav-item">
                     <a href="{{ route('orgs.libro.caja', ['id' => auth()->user()->org_id]) }}"
                             class="nav-link {{ $libroCajaActive ? 'active' : '' }}">
-                        <i class="bi bi-circle"></i><span>Gestión Contable Pro</span>
+                        {{-- Eliminado enlace Gestión Contable Pro --}}
                     </a>
                  </li>
 

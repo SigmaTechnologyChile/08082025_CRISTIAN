@@ -403,7 +403,7 @@ td {
                     </tr>
                 </thead>
                 <tbody>
-          @foreach($movimientos as $movimiento)
+          @foreach($movimientos->sortByDesc('creado_en') as $movimiento)
           <tr>
             <td>
               <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#editModal{{ $movimiento->id }}">
@@ -413,7 +413,17 @@ td {
                 <i class="bi bi-trash"></i>
               </button>
             </td>
-                        <td>{{ date('d/m/Y', strtotime($movimiento->fecha)) }}</td>
+            <td>
+              @if(!empty($movimiento->creado_en))
+                @if(!empty($movimiento->creado_en))
+                  {{ date('d-m-Y H:i:s', strtotime($movimiento->creado_en)) }}
+                @else
+                  {{ $movimiento->fecha ?? '-' }}
+                @endif
+              @else
+                -
+              @endif
+            </td>
             <td style="text-align: left;">{{ $movimiento->descripcion }}</td>
             <!-- INGRESOS -->
             <td class="{{ ($movimiento->tipo == 'ingreso' && $movimiento->grupo == 'Total Consumo') ? 'ingreso-cell' : '' }}">

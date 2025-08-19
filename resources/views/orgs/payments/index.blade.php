@@ -392,6 +392,10 @@
             <div class="modal-body">
                 <form id="newMemberForm" action="" method="POST">
                     @csrf
+                    @php
+                        $cuentaCorriente = \App\Models\Cuenta::porOrganizacion($org->id)->porTipo('corriente')->first();
+                        $cajaGeneral = \App\Models\Cuenta::porOrganizacion($org->id)->porTipo('caja')->first();
+                    @endphp
                     <div class="row">
                         <div class="col-md-4">
                             <div class="mb-3">
@@ -419,14 +423,36 @@
                         </div>
                         <div class="col-md-4">
                             <div class="mb-3">
-                                <label for="status" class="form-label">Estado</label>
-                                <select class="form-select" id="status" name="status">
-                                    <option value="Disponible">Disponible</option>
-                                    <option value="En uso">En uso</option>
-                                    <option value="En mantenimiento">En mantenimiento</option>
-                                    <option value="Dado de baja">Dado de baja</option>
+                                <label for="payment_method_id" class="form-label">Método de Pago</label>
+                                <select class="form-select" id="payment_method_id" name="payment_method_id" onchange="asignarCuentaDestino()">
+                                    <option value="1">POS</option>
+                                    <option value="2">Efectivo</option>
+                                    <option value="3">Transferencia</option>
                                 </select>
                             </div>
+                            <input type="hidden" id="cuenta_destino" name="cuenta_destino">
+                            <div class="mb-3">
+                                <label class="form-label">Cuenta destino</label>
+                                <input type="text" class="form-control" id="cuenta_destino_nombre" readonly>
+                            </div>
+                            <script>
+                                function asignarCuentaDestino() {
+                                    var metodo = document.getElementById('payment_method_id').value;
+                                    var cuentaDestinoInput = document.getElementById('cuenta_destino');
+                                    var cuentaDestinoNombre = document.getElementById('cuenta_destino_nombre');
+                                    if (metodo == '1') { // POS
+                                        cuentaDestinoInput.value = '{{ $cuentaCorriente ? $cuentaCorriente->id : '' }}';
+                                        cuentaDestinoNombre.value = '{{ $cuentaCorriente ? $cuentaCorriente->nombre : 'No disponible' }}';
+                                    } else if (metodo == '2') { // Efectivo
+                                        cuentaDestinoInput.value = '{{ $cajaGeneral ? $cajaGeneral->id : '' }}';
+                                        cuentaDestinoNombre.value = '{{ $cajaGeneral ? $cajaGeneral->nombre : 'No disponible' }}';
+                                    } else {
+                                        cuentaDestinoInput.value = '';
+                                        cuentaDestinoNombre.value = '';
+                                    }
+                                }
+                                document.addEventListener('DOMContentLoaded', asignarCuentaDestino);
+                            </script>
                         </div>
                         <div class="col-md-4">
                             <div class="mb-3">

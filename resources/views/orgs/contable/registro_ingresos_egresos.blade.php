@@ -282,7 +282,9 @@
       <button class="modal-close" id="closeIngresosModal">Cerrar</button>
     </div>
 
-    <form id="ingresosForm">
+    <form id="ingresosForm" method="POST" action="{{ route('movimientos.registrar', ['id' => $orgId ?? 864]) }}">
+      @csrf
+      <input type="hidden" name="org_id" value="{{ $orgId ?? 864 }}">
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
         <!-- Columna 1 -->
         <div>
@@ -338,7 +340,9 @@
       <h2><i class="bi bi-credit-card"></i> Registro de Egresos</h2>
       <button class="modal-close" id="closeEgresosModal">Cerrar</button>
     </div>
-    <form id="egresosForm">
+    <form id="egresosForm" method="POST" action="{{ route('movimientos.registrar', ['id' => $orgId ?? 864]) }}">
+      @csrf
+      <input type="hidden" name="org_id" value="{{ $orgId ?? 864 }}">
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
         <!-- Columna 1 -->
         <div>

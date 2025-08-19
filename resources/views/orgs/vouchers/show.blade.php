@@ -27,7 +27,7 @@
                                 @endphp
                                 <span class="badge bg-success">{{ $metodo }}</span>
                             </p>
-
+                            <p><strong>N° de servicio pagado:</strong> <span class="fw-bold">{{ $item->service ? $item->service->nro : ($item->service_id ?? '-') }}</span></p>
                         </div>
 
                         <div class="col-6">

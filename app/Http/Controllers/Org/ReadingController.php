@@ -896,6 +896,10 @@ if ($routeName === 'orgs.multiBoletaPrint') {
                 $reading->service_id = $service_id;
                 $reading->period = $lectura['period'];
                 $reading->current_reading = $lectura['lectura'];
+                // Asignar fecha real de creación si el registro es nuevo o si el campo está en 0
+                if (!$reading->exists || empty($reading->created_at) || $reading->created_at == '0' || $reading->created_at == '0000-00-00 00:00:00') {
+                    $reading->created_at = now();
+                }
                 
                 Log::info('Datos asignados a reading:', [
                     'service_id' => $reading->service_id,

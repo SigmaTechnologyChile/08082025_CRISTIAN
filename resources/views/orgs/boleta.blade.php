@@ -603,17 +603,17 @@
                     <table class="table-custom mb-2">
                         <tr>
                             <td>Lectura Actual</td>
-                            <td class="text-end"> {{ isset($reading->period) ? \Carbon\Carbon::parse($reading->period . '-01')->endOfMonth()->format('d-m-Y') : 'DD-MM-YYYY' }}</td>
+                            <td class="text-end">{{ isset($reading->created_at) ? \Carbon\Carbon::parse($reading->created_at)->format('d-m-Y') : 'DD-MM-YYYY' }}</td>
                             <td class="text-end">{{ $reading->current_reading ?? '0' }}</td>
                         </tr>
                         <tr>
                             <td>Lectura Anterior</td>
                             @if(isset($readingAnterior))
-                                <td class="text-end"> {{ \Carbon\Carbon::parse($readingAnterior->period . '-01')->endOfMonth()->format('d-m-Y') }} </td>
-                                <td class="text-end">{{ $reading->previous_reading ?? '0' }}</td>
+                                <td class="text-end">{{ isset($readingAnterior->created_at) ? \Carbon\Carbon::parse($readingAnterior->created_at)->format('d-m-Y') : '-' }}</td>
+                                <td class="text-end">{{ is_numeric($reading->previous_reading) ? $reading->previous_reading : '0' }}</td>
                             @else
                                 <td class="text-end">-</td>
-                                <td class="text-end">-</td>
+                                <td class="text-end">{{ is_numeric($reading->previous_reading) ? $reading->previous_reading : '0' }}</td>
                             @endif
                         </tr>
                         <tr>
