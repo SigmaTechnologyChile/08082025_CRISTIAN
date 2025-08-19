@@ -219,7 +219,7 @@ public function index($org_id, Request $request)
                     ->orWhere('members.full_name', 'like', '%' . $search . '%');
             })
             ->select('readings.*', 'services.nro', 'members.rut', 'members.full_name', 'services.sector as location_name')
-            ->orderBy('period', 'desc')->paginate(20);
+            ->orderBy('period', 'desc')->get();
 
         $locations = Location::where('org_id', $org->id)->orderby('order_by', 'ASC')->get();
 
@@ -388,7 +388,7 @@ public function index($org_id, Request $request)
 
         $reading->corte_reposicion = isset($data['cargo_corte_reposicion']) ?
         ($configCost->replacement_penalty) : 0;
-        $reading->other = $data['other'] ?? $reading->other;
+        $reading->other = $data['other'] ?? ($reading->other !== null ? $reading->other : 0);
 
         $subtotal_consumo_mes  = $consumo_agua_potable + $cargo_fijo;
         $reading->total_mounth = $subtotal_consumo_mes;
@@ -856,10 +856,10 @@ if ($routeName === 'orgs.multiBoletaPrint') {
                     Log::warning('Lectura con datos faltantes:', $lectura);
                     continue;
                 }
-                // Buscar el servicio por numero y rut
-                $servicio = Service::where('nro', $lectura['numero'])
-                    ->with('member')
-                    ->first();
+                    // Buscar el servicio por nro y rut
+                    $servicio = Service::where('nro', $lectura['numero'])
+                        ->with('member')
+                        ->first();
                     
                 Log::info('Buscando servicio con número: ' . $lectura['numero']);
                 Log::info('Resultado búsqueda servicio:', ['servicio_encontrado' => $servicio ? 'SI' : 'NO']);
@@ -914,6 +914,11 @@ if ($routeName === 'orgs.multiBoletaPrint') {
                 $reading->previous_reading = $prev && isset($prev->current_reading) ? $prev->current_reading : 0;
                 $reading->cm3 = max(0, (float)$reading->current_reading - (float)$reading->previous_reading);
                 $reading->save();
+                    // Recalcular valores usando updateReading
+                        $this->updateReading(Org::find($servicio->org_id), $reading, [
+                        'current_reading' => $reading->current_reading,
+                        'previous_reading' => $reading->previous_reading
+                    ]);
                 $guardadas++;
             }
             DB::commit();

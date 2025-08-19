@@ -556,7 +556,6 @@
 
     <div class="reading-container">
 
-        <button id="closeReading" class="close-btn" title="Cerrar" disabled>×</button>
 
         <div class="headerCard">
 

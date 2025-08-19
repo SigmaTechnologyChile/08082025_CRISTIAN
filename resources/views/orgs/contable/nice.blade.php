@@ -18,7 +18,7 @@
 
 
 
-    <title>{{ $title }} - {{ config('app.name', 'HydroSite') }}</title>
+    <title>@yield('title', 'HydroSite') - {{ config('app.name', 'HydroSite') }}</title>
 
 
 
@@ -575,7 +575,7 @@
                     <li class="nav-item">
 
                         <a href="{{ route('orgs.dashboard', ['id' => auth()->user()->org_id]) }}"
-                            class="nav-link {{ $active == 'orgs.dashboard' ? '' : 'collapsed' }}">
+                            class="nav-link {{ (isset($active) && $active == 'orgs.dashboard') ? '' : 'collapsed' }}">
 
                             <i class="bi bi-speedometer2" style="color: orange;"></i><span>Dashboard</span>
 
@@ -2892,6 +2892,8 @@
 
     <script src="{{asset('theme/common/js/jquery.Rut.js')}}"></script>
 
+
+    @stack('scripts')
     @yield('js')
 
 </body>

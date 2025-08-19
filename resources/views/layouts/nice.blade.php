@@ -2892,6 +2892,8 @@
 
     <script src="{{asset('theme/common/js/jquery.Rut.js')}}"></script>
 
+
+    @stack('scripts')
     @yield('js')
 
 </body>

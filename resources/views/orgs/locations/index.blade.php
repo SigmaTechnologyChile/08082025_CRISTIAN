@@ -16,7 +16,7 @@
     <section class="section dashboard">
     <div class="card top-selling overflow-auto">
         <div class="card-body pt-2">
-            <div class="row mb-4 align-items-center">  <!-- Añadido align-items-center -->
+            <div class="row mb-4 align-items-center">  <!-- A锟�0锟�9adido align-items-center -->
                 <!-- Search Bar - Reducido a col-md-7 -->
                 <div class="col-md-7">
                     <div class="search-container position-relative z-index-1">
@@ -43,7 +43,7 @@
                         <i class="bi bi-plus-circle-fill me-2"></i>
                         <span>Nuevo</span>
                     </a>
-                    <a href="{{ route('orgs.locations.export', $org->id) }}" class="btn btn-primary pulse-btn px-3 rounded-2 d-flex align-items-center" style="height: 34px;">
+                    <a href="{{ route('orgs.locations.export', ['id' => $org->id, 'search' => request('search')]) }}" class="btn btn-primary pulse-btn px-3 rounded-2 d-flex align-items-center" style="height: 34px;">
                         <i class="bi bi-box-arrow-up-right me-2"></i>
                         <span>Exportar</span>
                     </a>

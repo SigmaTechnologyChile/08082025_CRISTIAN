@@ -151,7 +151,9 @@ class LocationController extends Controller
 
     public function export()
     {
-        return Excel::download(new LocationsExport, 'Sectores-'.date('Ymdhis').'.xlsx');
+    $orgId = request('id');
+    $search = request('search');
+    return Excel::download(new LocationsExport($orgId, $search), 'Sectores-'.date('Ymdhis').'.xlsx');
     }
 
     public function panelControlRutas($id)

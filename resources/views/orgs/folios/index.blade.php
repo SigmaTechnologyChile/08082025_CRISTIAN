@@ -50,9 +50,33 @@
                         </button>
                     </div>
                         <div class="col-md-auto d-flex align-items-center ms-2">
-                            <a href="{{ route('orgs.historyfolio.export', $org->id) }}" class="btn btn-primary pulse-btn p-1 px-2 rounded-2">
+                            <a href="#" id="exportBtn" class="btn btn-primary pulse-btn p-1 px-2 rounded-2">
                                 <i class="bi bi-box-arrow-right me-2"></i>Exportar
                             </a>
+@push('scripts')
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var exportBtn = document.getElementById('exportBtn');
+    if (exportBtn) {
+        exportBtn.onclick = function(e) {
+            e.preventDefault();
+            try {
+                var table = document.querySelector('table');
+                if (!table) {
+                    alert('No se encontró ninguna tabla para exportar.');
+                    return;
+                }
+                var wb = XLSX.utils.table_to_book(table, {sheet: 'Folios'});
+                XLSX.writeFile(wb, 'folios_exportados.xlsx');
+            } catch (err) {
+                alert('Error al exportar: ' + err.message);
+            }
+        }
+    }
+});
+</script>
+@endpush
                         </div>
                     </div>
                 </form>

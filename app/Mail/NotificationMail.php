@@ -24,13 +24,12 @@ class NotificationMail extends Mailable
 
     public $title;
 
-    public $message;
+    public $body;
 
     public $org;
 
     public $user;
 
-    public $activeLocations;
 
 
 
@@ -40,13 +39,12 @@ class NotificationMail extends Mailable
 
         $this->title = $title;
 
-        $this->message = $message;
+    $this->body = $message;
 
         $this->org = $org;
 
         $this->user = $user;
 
-        $this->activeLocations = \App\Models\Location::where('org_id', $org->id)->get();
 
     }
 
@@ -58,18 +56,17 @@ class NotificationMail extends Mailable
 
         return $this->subject($this->title)
 
-            ->view('emails.notification')
+            ->view('emails.notification_mail')
 
             ->with([
 
                 'title' => $this->title,
 
-                'message' => $this->message,
+                'body' => $this->body,
 
                 'org' => $this->org,
 
                 'user' => $this->user,
-                 'activeLocations' => $this->activeLocations,
 
             ]);
 

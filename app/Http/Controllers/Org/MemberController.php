@@ -98,10 +98,44 @@ class MemberController extends Controller
     {
         $org = Org::findOrFail($id);
 
-        // ...validación y lógica igual que antes...
+        $validated = $request->validate([
+            'rut' => 'required|string|unique:members,rut',
+            'first_name' => 'required|string|max:100',
+            'last_name' => 'required|string|max:100',
+            'email' => 'required|email',
+            'address' => 'required|string|max:255',
+            'state' => 'required|exists:states,id',
+            'commune' => 'required|string|max:100',
+            'mobile_phone' => 'required|string|max:15',
+            'phone' => 'nullable|string|max:15',
+            'partner' => 'required',
+            'gender' => 'required|string',
+            'activo' => 'nullable|boolean',
+        ]);
 
-        // El resto del método permanece igual, solo cambia $org = Org::findOrFail($id);
-        // Puedes copiar el bloque de validación y lógica de tu versión original aquí.
+        $member = new Member();
+        $member->rut = $validated['rut'];
+        $member->first_name = strtoupper($validated['first_name']);
+        $member->last_name = strtoupper($validated['last_name']);
+        $member->full_name = $member->first_name . ' ' . $member->last_name;
+        $member->city_id = $validated['state'];
+        $member->commune = $validated['commune'];
+        $member->gender = $validated['gender'];
+        $member->email = $validated['email'];
+        $member->address = strtoupper($validated['address']);
+        $member->partner = $validated['partner'];
+        $member->phone = '+56' . ltrim($validated['phone'] ?? '', '0');
+        $member->mobile_phone = '+56' . ltrim($validated['mobile_phone'], '0');
+        $member->active = $validated['activo'] ?? 1;
+        $member->save();
+
+        $orgMember = new OrgMember();
+        $orgMember->org_id = $org->id;
+        $orgMember->member_id = $member->id;
+        $orgMember->save();
+
+        return redirect()->route('orgs.members.index', $org->id)
+            ->with('success', 'Socio creado correctamente.');
     }
 
     public function dashboard($id)

@@ -9,7 +9,7 @@
 <div class="contable-container">
     <!-- Breadcrumbs modernos -->
     <nav class="contable-breadcrumb">
-        <a href="{{ route('orgs.dashboard', ['id' => auth()->user()->org_id ?? 864]) }}" class="contable-breadcrumb-item">
+  <a href="{{ route('orgs.dashboard', ['id' => $orgId ?? 864]) }}" class="contable-breadcrumb-item">
             <i class="bi bi-house-door"></i> Inicio
         </a>
         <span class="contable-breadcrumb-separator">

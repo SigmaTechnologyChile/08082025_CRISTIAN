@@ -79,16 +79,9 @@
         <i class="bi bi-plus-circle me-2"></i>Nuevo tramo
     </button>
 
-@php
-    $disabled = true; // Cambia a false si quieres habilitar el enlace
-@endphp
-
-<a href="{{ $disabled ? '#' : route('orgs.readings.export', $org->id) }}"
-   class="btn btn-primary pulse-btn p-1 px-2 rounded-2 {{ $disabled ? 'disabled' : '' }}"
-   aria-disabled="{{ $disabled ? 'true' : 'false' }}"
-   onclick="{{ $disabled ? 'return false;' : '' }}">
-    <i class="bi bi-box-arrow-right me-2"></i>Exportar
-</a>
+<button type="button" class="btn btn-primary pulse-btn p-1 px-2 rounded-2" onclick="window.print();">
+    <i class="bi bi-printer me-2"></i>Imprimir
+</button>
 </div>
 </section>
 
@@ -136,7 +129,7 @@
                 </div>
             </div>
         </div>
-        {{ $tiers->links('pagination::bootstrap-4') }}
+    {{-- Sin paginación para exportar todos los tramos filtrados --}}
     </section>
 @endsection
 

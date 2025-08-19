@@ -52,62 +52,54 @@ class PaymentController extends Controller
         }
 
 
-        // Filtrar los miembros y servicios - TODOS los registros pendientes de TODOS los meses
-            $members = Reading::join('members', 'readings.member_id', 'members.id')
-             ->join('services', 'services.id', 'readings.service_id')
-          //  ->join('services', 'services.member_id', 'readings.member_id')
-                ->where('services.org_id', $org->id)
-                ->where('readings.payment_status', 0) // Solo registros pendientes de pago
-                // ELIMINADOS: Filtros por año y mes para mostrar TODOS los pendientes
-                // ->when($year, function($q) use ($year) {
-                //         $q->where('readings.period','like',$year.'%');
-                // })
-                // ->when($month, function($q) use ($month) {
-                //         $q->where('readings.period','like','%'.$month);
-                // })
-                // Mantener filtros opcionales si se necesitan en el futuro:
-                ->when($year && $year !== '', function($q) use ($year) {
-                        $q->where('readings.period','like',$year.'%');
-                })
-                ->when($month && $month !== '', function($q) use ($month) {
-                        $q->where('readings.period','like','%'.$month);
-                })
-                ->when($sector, function($q) use ($sector) {
-                        $q->where('services.locality_id',$sector);
-                })
-                ->when($search, function ($query) use ($search) {
-                    $query->where(function ($q) use ($search) {
-                        // Especificamos de qué tabla debe venir cada columna
-                        $q->where('members.first_name', 'like', "%{$search}%")
-                          ->orWhere('members.last_name', 'like', "%{$search}%")
-                          ->orWhere('members.rut', 'like', "%{$search}%")
-                          ->orWhere('members.address', 'like', "%{$search}%");
-                    });
-                })
-                ->select(
-               'members.id',
-        'members.rut',
-        'members.first_name',
-        'members.last_name',
-        'members.address',
-        'members.phone',
-        'members.email',
-        DB::raw('COUNT(readings.id) as qrx_serv'), // ✅ Usar DISTINCT
-        DB::raw('COUNT(DISTINCT readings.id) as qrx_readings'),
-        DB::raw('SUM(readings.total) as total_amount'),
-        DB::raw('GROUP_CONCAT(DISTINCT readings.period ORDER BY readings.period SEPARATOR ", ") as pending_periods') // Mostrar todos los períodos pendientes
-        )
-        ->groupBy('members.id',
-        'members.rut',
-        'members.first_name',
-        'members.last_name',
-        'members.address',
-        'members.phone',
-        'members.email'
-                )
-                ->orderByRaw('MIN(readings.period) ASC') // Ordenar por el período más antiguo primero
-                ->paginate(20)
-                  ->withQueryString();
+        // Orden dinámico por columna y sentido
+        $sort = $request->input('sort', 'id');
+        $order = $request->input('order', 'asc');
+
+        $members = Reading::join('members', 'readings.member_id', 'members.id')
+            ->join('services', 'services.id', 'readings.service_id')
+            ->where('services.org_id', $org->id)
+            ->where('readings.payment_status', 0)
+            ->when($year && $year !== '', function($q) use ($year) {
+                $q->where('readings.period','like',$year.'%');
+            })
+            ->when($month && $month !== '', function($q) use ($month) {
+                $q->where('readings.period','like','%'.$month);
+            })
+            ->when($sector, function($q) use ($sector) {
+                $q->where('services.locality_id',$sector);
+            })
+            ->when($search, function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('members.first_name', 'like', "%{$search}%")
+                      ->orWhere('members.last_name', 'like', "%{$search}%")
+                      ->orWhere('members.rut', 'like', "%{$search}%")
+                      ->orWhere('members.address', 'like', "%{$search}%");
+                });
+            })
+            ->select(
+                'members.id',
+                'members.rut',
+                'members.first_name',
+                'members.last_name',
+                'members.address',
+                'members.phone',
+                'members.email',
+                DB::raw('COUNT(readings.id) as qrx_serv'),
+                DB::raw('COUNT(DISTINCT readings.id) as qrx_readings'),
+                DB::raw('SUM(readings.total) as total_amount'),
+                DB::raw('GROUP_CONCAT(DISTINCT readings.period ORDER BY readings.period SEPARATOR ", ") as pending_periods')
+            )
+            ->groupBy('members.id',
+                'members.rut',
+                'members.first_name',
+                'members.last_name',
+                'members.address',
+                'members.phone',
+                'members.email'
+            )
+            ->orderBy($sort, $order)
+            ->get();
 
         $locations = Location::where('org_id', $org->id)->get();
         return view('orgs.payments.index', compact('org', 'members', 'locations'));

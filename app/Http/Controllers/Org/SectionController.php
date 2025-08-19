@@ -39,7 +39,7 @@ class SectionController extends Controller
             ]
         );
 
-        $tiers = TierConfig::where('org_id', $org->id)->paginate(20);
+    $tiers = TierConfig::where('org_id', $org->id)->get();
         return view('orgs.sections.index', compact('org', 'fixedCostConfig', 'tiers'));
     }
 
@@ -106,7 +106,6 @@ class SectionController extends Controller
     {
         // dd($request->all());
         $tier = TierConfig::where('org_id', $orgId)->where('id', $tramoId)->firstOrFail();
-
         $tier->update($request->only([
             'tier_name',
             'range_from',
@@ -114,21 +113,19 @@ class SectionController extends Controller
             'value'
         ]));
 
-        // return redirect()->route('orgs.sections.edit', [$orgId])->with('success', 'Tramo actualizado');
         return redirect()->route('orgs.sections.edit', [$orgId, $tramoId])
             ->with('success', 'Tramo actualizado');
     }
 
+    public function destroy($orgId, $tramoId)
+    {
+        $tier = TierConfig::where('org_id', $orgId)->where('id', $tramoId)->firstOrFail();
+        $tier->delete();
 
+        return redirect()->route('orgs.sections.index', $orgId)
+            ->with('success', 'Tramo eliminado correctamente.');
+    }
 
-public function destroy($orgId, $tramoId)
-{
-    $tier = TierConfig::where('org_id', $orgId)->where('id', $tramoId)->firstOrFail();
-    $tier->delete();
-
-    return redirect()->route('orgs.sections.index', $orgId)
-        ->with('success', 'Tramo eliminado correctamente.');
-}
 
     /*Export Excel*/
 

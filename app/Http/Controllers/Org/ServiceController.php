@@ -72,7 +72,7 @@ class ServiceController extends Controller
                 return $query->where('services.org_id', $this->org->id);
             })
             ->when(request('sector'), function ($query) {
-                return $query->where('services.sector', 'like', '%' . request('sector') . '%');
+                return $query->where('services.locality_id', request('sector'));
             })
             ->when(request('nro'), function ($query) {
                 return $query->where('services.nro', 'like', '%' . request('nro') . '%');
@@ -92,7 +92,7 @@ class ServiceController extends Controller
             )
             // Ordenamiento dinámico
             ->orderBy($sort, $order)
-            ->paginate(21);
+            ->get();
 
         return view('orgs.services.index', compact('org', 'services', 'locations'));
     }
@@ -180,6 +180,14 @@ class ServiceController extends Controller
     
     public function export($id) 
     {
-        return Excel::download(new ServiceExport, 'Servicios-'.date('Ymdhis').'.xlsx');
+        $filters = [
+            'org_id' => $id,
+            'sector' => request('sector'),
+            'nro' => request('nro'),
+            'search' => request('search'),
+            'sort' => request('sort', 'nro'),
+            'order' => request('order', 'asc'),
+        ];
+        return Excel::download(new ServiceExport($filters), 'Servicios-'.date('Ymdhis').'.xlsx');
     }
 }

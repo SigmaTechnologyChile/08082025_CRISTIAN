@@ -19,15 +19,13 @@
                     <div class="row">
                         <div class="col-12">
                             <p><strong>Pago realizado con:</strong>
-                                @if($order->payment_method_id == 1)
-                                    <span class="badge bg-success">POS</span>
-                                @elseif($order->payment_method_id == 2)
-                                    <span class="badge bg-success">Efectivo</span>
-                                @elseif($order->payment_method_id == 3)
-                                    <span class="badge bg-info">Transferencia</span>
-                                @else
-                                    <span class="badge bg-secondary">Otro</span>
-                                @endif
+                                @php
+                                    $metodo = 'Otro';
+                                    if ($order->payment_method_id == 1) $metodo = 'POS';
+                                    elseif ($order->payment_method_id == 2) $metodo = 'Efectivo';
+                                    elseif ($order->payment_method_id == 3) $metodo = 'Transferencia';
+                                @endphp
+                                <span class="badge bg-success">{{ $metodo }}</span>
                             </p>
 
                         </div>

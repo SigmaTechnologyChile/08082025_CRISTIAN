@@ -1,6 +1,20 @@
 @extends('layouts.nice', ['active'=>'orgs.payments.index','title'=>'Seleccionar Servicios'])
 
 @section('content')
+  @if(session('error'))
+    <div class="alert alert-danger">
+      {{ session('error') }}
+    </div>
+  @endif
+  @if($errors->any())
+    <div class="alert alert-danger">
+      <ul>
+        @foreach($errors->all() as $error)
+          <li>{{ $error }}</li>
+        @endforeach
+      </ul>
+    </div>
+  @endif
     <div class="pagetitle">
       <h1>Seleccionar Servicios</h1>
       <nav>
@@ -166,38 +180,31 @@
 
 @endsection
 @section('js')
- <script>
-      // Función para actualizar el total cuando se seleccionan o deseleccionan los servicios
-      document.querySelectorAll('.service-checkbox').forEach(function(checkbox) {
-        checkbox.addEventListener('change', function() {
-          let totalAmount = 0;
-          document.querySelectorAll('.service-checkbox:checked').forEach(function(checkedBox) {
-            totalAmount += parseFloat(checkedBox.getAttribute('data-total'));
-          });
 
-          // Mostrar el total
-          document.getElementById('totalAmount').textContent = totalAmount.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' });
-          console.log("total a enviar",  document.getElementById('totalAmount').textContent)
-            console.log("data a enviar",  this)
-          // Habilitar o deshabilitar la forma de pago
-          if (totalAmount > 0) {
-            document.getElementById('paymentMethods').style.display = 'block';
-          } else {
-            document.getElementById('paymentMethods').style.display = 'none';
-          }
-// document.getElementById('selecteId').textContent=document.getElementsByClassName('services[]').value?0
-          // Activar o desactivar el botón de pagar
+<script>
+  // Función para verificar si hay servicios seleccionados y forma de pago elegida
+  function updatePayButtonState() {
+    const totalAmount = Array.from(document.querySelectorAll('.service-checkbox:checked'))
+      .reduce((sum, cb) => sum + parseFloat(cb.getAttribute('data-total')), 0);
+    const paymentSelected = document.querySelector('input[name="payment_method_id"]:checked') !== null;
+    document.getElementById('totalAmount').textContent = totalAmount.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' });
+    document.getElementById('paymentMethods').style.display = totalAmount > 0 ? 'block' : 'none';
+    document.getElementById('payButton').disabled = !(totalAmount > 0 && paymentSelected);
+  }
 
-          document.getElementById('payButton').disabled = totalAmount === 0;
-        });
-      });
-      document.querySelector('form').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const formData = new FormData(this);
-    console.log('Datos a enviar:', Array.from(formData.entries()));
-    this.submit(); // Quita esta línea después de verificar
-});
-    </script>
+  // Actualizar estado al cambiar servicios
+  document.querySelectorAll('.service-checkbox').forEach(function(checkbox) {
+    checkbox.addEventListener('change', updatePayButtonState);
+  });
+
+  // Actualizar estado al cambiar forma de pago
+  document.querySelectorAll('input[name="payment_method_id"]').forEach(function(radio) {
+    radio.addEventListener('change', updatePayButtonState);
+  });
+
+  // Inicializar estado al cargar la página
+  document.addEventListener('DOMContentLoaded', updatePayButtonState);
+</script>
 
 @endsection
 

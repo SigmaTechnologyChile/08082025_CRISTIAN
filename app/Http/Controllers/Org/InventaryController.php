@@ -27,10 +27,10 @@ class InventaryController extends Controller
      *
      * @return \Illuminate\Contracts\Support\Renderable
      */
-    public function index(Request $request)
+    public function index(Request $request,$id)
     {
-        $org = $this->org;
-        //dd($org);
+        $org = Org::find($id);
+
         
         $start_date = $request->input('start_date');
         $end_date = $request->input('end_date');
@@ -59,12 +59,16 @@ class InventaryController extends Controller
         return view('orgs.inventories.index',compact('org','inventories'));
     }
     
-    public function create()
+    public function create($id)
     {
-        //dd($org);
-        $org = $this->org;
-        $categories = InventoryCategory::where('org_id',$org->id)->get();
-        return view('orgs.inventories.create',compact('org', 'categories'));
+           \Log::info('ID create: ' . $id);
+        
+        $org = Org::find($id);
+        if (!$org) {
+            return redirect()->route('orgs.index')->with('error', 'Organización no encontrada.');
+        }
+        $categories = InventoryCategory::where('org_id', $org->id)->get();
+        return view('orgs.inventories.create', compact('org', 'categories'));
     }
     
     public function store(Request $request, $orgId)

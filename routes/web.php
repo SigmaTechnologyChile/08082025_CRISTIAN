@@ -217,6 +217,9 @@ Route::get('/servicios-por-sector/{sectorId}', [App\Http\Controllers\Org\Operato
 Route::get('org/{id}/cuentas-iniciales', [App\Http\Controllers\Org\ContableController::class, 'cuentasIniciales'])->name('cuentas_iniciales.show');
 Route::post('org/{id}/cuentas-iniciales', [App\Http\Controllers\Org\ContableController::class, 'store'])->name('cuentas_iniciales.store');
 Route::get('org/{id}/registro-ingresos-egresos', [App\Http\Controllers\Org\ContableController::class, 'registroIngresosEgresos'])->name('registro_ingresos_egresos.show');
+Route::get('{id}/libro-caja-crc', [App\Http\Controllers\Org\ContableController::class, 'libroCajaSoloVista'])
+    ->name('libro.caja.crc')
+    ->middleware('auth:crc');
 Route::get('org/{id}/giros-depositos', [App\Http\Controllers\Org\ContableController::class, 'girosDepositos'])->name('giros_depositos.show');
 Route::get('org/{id}/libro-caja-tabular', [App\Http\Controllers\Org\ContableController::class, 'libroCajaTabular'])->name('libro_caja_tabular.show');
 Route::get('org/{id}/balance', [App\Http\Controllers\Org\ContableController::class, 'balance'])->name('balance.show');
@@ -384,8 +387,8 @@ Route::prefix('org')->name('orgs.')->group(function () {
 
 
 
-    //Export Excel
 
+    //Export Excel
     Route::get('{id}/tramos/export', [App\Http\Controllers\Org\SectionController::class, 'export'])->name('sections.export');
 
 
@@ -464,7 +467,6 @@ Route::prefix('org')->name('orgs.')->group(function () {
     Route::post('{id}/sectores', [App\Http\Controllers\Org\LocationController::class, 'store'])->name('locations.store');
 
     Route::get('{id}/sectores/{locationId}/editar', [App\Http\Controllers\Org\LocationController::class, 'edit'])->name('locations.edit');
-
     Route::put('{id}/sectores/{locationId}', [App\Http\Controllers\Org\LocationController::class, 'update'])->name('locations.update');
 
     //Route::delete('{id}/sectores/{locationId}', [App\Http\Controllers\Org\LocationController::class, 'destroy'])->name('locations.destroy');
@@ -660,6 +662,10 @@ Route::prefix('ajax')->name('ajax.')->group(function () {
 
 });
 
+
+// Rutas para lecturas de macromedidor (AJAX móvil)
+Route::get('/org/{orgId}/aguapotable/macromedidor/listar', [App\Http\Controllers\MacromedidorReadingController::class, 'index']);
+Route::post('/org/{orgId}/aguapotable/macromedidor/guardar', [App\Http\Controllers\MacromedidorReadingController::class, 'store']);
 
 
 Route::get('pos-integrado', function () {

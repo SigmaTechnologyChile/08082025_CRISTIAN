@@ -8,6 +8,9 @@ class MacromedidorReadingController extends Controller
 {
     public function store(Request $request)
     {
+        if (!auth()->check()) {
+            return response()->json(['error' => 'No autenticado'], 401);
+        }
         $data = $request->validate([
             'fecha' => 'required|date',
             'frecuencia' => 'required|string',
@@ -26,9 +29,9 @@ class MacromedidorReadingController extends Controller
         return response()->json(['success' => true, 'registro' => $registro]);
     }
 
-    public function index(Request $request)
+    public function index(Request $request, $orgId)
     {
-        $query = MacromedidorReading::query();
+        $query = MacromedidorReading::where('org_id', $orgId);
         $anio = $request->input('anio');
         $frecuencia = $request->input('frecuencia');
         if (!empty($anio)) {
@@ -37,7 +40,10 @@ class MacromedidorReadingController extends Controller
         if (!empty($frecuencia) && $frecuencia !== 'todos') {
             $query->where('frecuencia', $frecuencia);
         }
-        $registros = $query->orderBy('fecha', 'desc')->get();
-        return response()->json($registros);
+            // Obtener la última lectura del macromedidor para la organización
+            $lecturas = $query->orderBy('fecha', 'desc')
+                ->take(1)
+                ->get();
+            return response()->json($lecturas);
     }
 }

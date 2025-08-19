@@ -1,38 +1,46 @@
-<!-- registro.html -->
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro de Lecturas - HydroSite</title>
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <!-- Aquí copias los mismos <link> y <style> del archivo original -->
+@extends('layouts.nice', ['active' => 'orgs.macromedidor.index', 'title' => 'Registro de Lecturas Macromedidor'])
 
-     <!-- Favicons -->
-    <link href="https://hydrosite.cl/public/theme/common/img/favicon.png" rel="icon">
-    <link href="https://hydrosite.cl/public/theme/common/img/apple-touch-icon.png" rel="apple-touch-icon">
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.gstatic.com" rel="preconnect">
-    <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,300i,400,400i,600,600i,700,700i|Nunito:300,300i,400,400i,600,600i,700,700i|Poppins:300,300i,400,400i,500,500i,600,600i,700,700i" rel="stylesheet">
-    
-    <!-- Vendor CSS Files -->
-    <link href="https://hydrosite.cl/public/theme/nice/assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://hydrosite.cl/public/theme/nice/assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
-    <link href="https://hydrosite.cl/public/theme/nice/assets/vendor/boxicons/css/boxicons.min.css" rel="stylesheet">
-    
-    <!-- Template Main CSS File -->
-    <link href="https://hydrosite.cl/public/theme/nice/assets/css/style.css" rel="stylesheet">
-    <!-- El bloque <style> se moverá al final del <head> -->
-</head>
+@section('content')
     <style>
+      /* Botón Volver verde personalizado */
+            .btn-volver-green {
+              position: fixed;
+              top: 24px;
+              right: 24px;
+              background: linear-gradient(90deg, #22c55e 0%, #38bdf8 100%);
+              color: #fff;
+              border: none;
+              border-radius: 8px;
+              padding: 12px 20px;
+              font-size: 1rem;
+              font-weight: 600;
+              box-shadow: var(--shadow);
+              cursor: pointer;
+              z-index: 1000;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              transition: background 0.2s, transform 0.2s;
+            }
+            .btn-volver-green:hover {
+              background: linear-gradient(90deg, #38bdf8 0%, #22c55e 100%);
+              color: #fff;
+              transform: translateY(-2px);
+            }
+            @media (max-width: 600px) {
+              .btn-volver-green {
+                top: 12px;
+                right: 12px;
+                padding: 10px 16px;
+                font-size: 0.9rem;
+              }
+            }
       @media (max-width: 600px) {
         body {
           background: #f4f6fb !important;
         }
         .container {
-          padding: 0 !important;
-          max-width: 100vw !important;
+          padding: 0;
         }
         .float-card, .card, .card-body, .card-header {
           box-shadow: none !important;
@@ -219,17 +227,30 @@
         width: 100vw;
         box-sizing: border-box;
       }
+      :root {
+        --container-width: 800px; /* Cambia este valor manualmente */
+      }
       .container {
-        width: 100vw;
-        max-width: 100vw;
-        margin: 0 auto;
+  width: calc(0.4 * (100vw - 300px));
+  max-width: calc(0.4 * (100vw - 300px));
+        margin-left: 300px;
+        margin-right: 0;
         padding: 0 32px;
         box-sizing: border-box;
       }
+      @media (max-width: 1199px) {
+        .container {
+          width: 100vw;
+          max-width: 100vw;
+          margin-left: 0;
+          margin-right: 0;
+          padding: 0 8px;
+        }
+      }
       .card {
         background: var(--card-bg);
-        border-radius: var(--radius);
-        box-shadow: var(--shadow);
+        border-radius: 18px;
+        box-shadow: 0 8px 32px rgba(37,99,235,0.12), 0 2px 8px rgba(37,99,235,0.07);
         border: 1px solid var(--border);
         overflow: hidden;
         position: relative;
@@ -242,11 +263,11 @@
       /* Tarjetas flotantes adicionales */
       .float-card {
         background: var(--card-bg);
-        border-radius: var(--radius);
+        border-radius: 18px;
         box-shadow: 0 8px 32px rgba(37,99,235,0.15), 0 2px 8px rgba(37,99,235,0.07);
         border: 1px solid var(--border);
-        padding: 24px 20px;
-        margin-bottom: 28px;
+        padding: 28px 24px;
+        margin-bottom: 32px;
         position: relative;
       }
       .float-card:hover {
@@ -429,23 +450,25 @@
         margin-top: 32px;
       }
       .action-button {
-        background: var(--primary);
+        background: linear-gradient(135deg, #2563eb 0%, #4f8cff 100%);
         color: #fff;
         border: none;
-        border-radius: 8px;
-        padding: 15px 32px;
-        font-size: 1.1rem;
+        border-radius: 12px;
+        padding: 16px 36px;
+        font-size: 1.12rem;
         font-weight: 600;
-        box-shadow: 0 2px 8px rgba(37,99,235,0.07);
+        box-shadow: 0 4px 16px rgba(37,99,235,0.10);
         cursor: pointer;
         transition: background 0.2s, transform 0.2s;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 10px;
+        letter-spacing: 0.02em;
       }
       .action-button:hover {
-        background: var(--secondary);
+        background: linear-gradient(135deg, #22c55e 0%, #4f8cff 100%);
         transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(37,99,235,0.18);
       }
       
       /* Estilo específico para el botón Guardar Lecturas */
@@ -550,10 +573,10 @@
       
       /* Estilos para la tabla de registros */
       .table-responsive {
-        border-radius: 12px;
+        border-radius: 16px;
         overflow: hidden;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-        margin-bottom: 24px;
+        box-shadow: 0 8px 32px rgba(37,99,235,0.10);
+        margin-bottom: 32px;
       }
       
       .table {
@@ -562,28 +585,34 @@
       }
       
       .table thead th {
-        background: var(--primary);
-        color: white;
+        background: linear-gradient(90deg, #2563eb 0%, #4f8cff 100%);
+        color: #fff;
         border: none;
-        padding: 16px 12px;
-        font-weight: 600;
+        padding: 18px 14px;
+        font-weight: 700;
         text-align: center;
         white-space: nowrap;
+        font-size: 1.05rem;
+        letter-spacing: 0.01em;
+        box-shadow: 0 2px 8px rgba(37,99,235,0.08);
       }
       
       .table tbody td {
-        padding: 12px;
+        padding: 14px 10px;
         vertical-align: middle;
         text-align: center;
         border-color: #e5e7eb;
+        font-size: 0.98rem;
+        background: #f8fafc;
       }
       
       .table-striped tbody tr:nth-of-type(odd) {
-        background-color: rgba(37, 99, 235, 0.03);
+        background-color: #e6f0ff;
       }
       
       .table-hover tbody tr:hover {
-        background-color: rgba(37, 99, 235, 0.08);
+        background-color: #dbeafe;
+        transition: background 0.2s;
       }
       
       .btn-sm {
@@ -626,21 +655,24 @@
     </style>
 <body>
 
-<!-- Botón Volver -->
-<button class="btn-volver" onclick="window.history.back()" title="Volver a la página anterior">
-  <i class="bi bi-arrow-left"></i> Volver
-</button>
+@include('orgs.contable.partials.contable-styles')
+
 
 <!-- Header y Sidebar si se requiere -->
 
 <main class="container">
+  <!-- Botón Volver verde superior derecha -->
+  <button type="button" class="btn-volver-green" id="btnVolverOperador">
+    <i class="bi bi-arrow-left-circle"></i> Volver a Operador
+  </button>
   <div class="float-card mt-5" id="vistaFormulario">
+            
     <div class="card-header section-header">
       <h1>Registro de Lecturas</h1>
       <p class="instructions">Ingrese los datos de lectura de macromedidor y distribución. Los cálculos de pérdidas se mostrarán automáticamente.</p>
     </div>
     <div class="card-body">
-      <form id="registroMacromedidor" class="form-section">
+  <form id="registroMacromedidor" class="form-section" style="width:70%; min-width:320px; margin:0 auto;">
         <div class="form-grid">
           <div class="form-group">
             <label>Fecha de Lectura</label>
@@ -841,8 +873,52 @@
     <script>
       $(document).ready(function() {
         // Detectar orgId desde la URL
-        var pathParts = window.location.pathname.split('/');
-        var orgId = (pathParts.length >= 5 && pathParts[1] === 'org' && !isNaN(parseInt(pathParts[2]))) ? pathParts[2] : null;
+          // Mejor detección de orgId para cualquier estructura de URL
+          var orgId = null;
+          var pathParts = window.location.pathname.split('/');
+          // Busca el primer segmento numérico después de 'org'
+          for (var i = 0; i < pathParts.length; i++) {
+            if (pathParts[i] === 'org' && i + 1 < pathParts.length && !isNaN(parseInt(pathParts[i + 1]))) {
+              orgId = pathParts[i + 1];
+              break;
+            }
+          }
+
+        // Botón Volver a la vista principal operador
+        $('#btnVolverOperador').click(function() {
+          if (orgId) {
+            window.location.href = '/org/' + orgId + '/operator';
+          } else {
+            alert('No se pudo detectar el ID de la organización en la URL.');
+          }
+        });
+          // Botón Volver desde Registros al panel de operador
+          $('#btnVolverFormularioDesdeRegistros').after(
+            `<button type="button" class="action-button" id="btnVolverOperadorDesdeRegistros">
+              <i class="bi bi-arrow-left-circle"></i> Volver a Operador
+            </button>`
+          );
+          $(document).on('click', '#btnVolverOperadorDesdeRegistros', function() {
+            if (orgId) {
+              window.location.href = '/org/' + orgId + '/operator';
+            } else {
+              alert('No se pudo detectar el ID de la organización en la URL.');
+            }
+          });
+
+          // Botón Volver desde Gráficos al panel de operador
+          $('#btnVolverFormulario').after(
+            `<button type="button" class="action-button" id="btnVolverOperadorDesdeGraficos">
+              <i class="bi bi-arrow-left-circle"></i> Volver a Operador
+            </button>`
+          );
+          $(document).on('click', '#btnVolverOperadorDesdeGraficos', function() {
+            if (orgId) {
+              window.location.href = '/org/' + orgId + '/operator';
+            } else {
+              alert('No se pudo detectar el ID de la organización en la URL.');
+            }
+          });
 
         // Cargar lecturas anteriores al inicializar
         cargarUltimasLecturas();
@@ -1221,29 +1297,21 @@
         }
 
         // Botón para mostrar registros
-        $('#btnVerRegistros').click(function() {
-          $('#vistaFormulario').hide();
-          $('#vistaGraficos').hide();
-          $('#vistaRegistros').show();
-          cargarTablaRegistros();
-        });
-        $('#btnVolverFormularioDesdeRegistros').click(function() {
-          $('#vistaRegistros').hide();
-          $('#vistaGraficos').hide();
-          $('#vistaFormulario').show();
-          actualizarFechaActual();
-        });
-        $('#btnVerGraficos').click(function() {
-          $('#vistaFormulario').hide();
-          $('#vistaGraficos').show();
-          setTimeout(renderGraficos, 100);
-        });
-        $('#btnVolverFormulario').click(function() {
-          $('#vistaGraficos').hide();
-          $('#vistaRegistros').hide();
-          $('#vistaFormulario').show();
-          actualizarFechaActual();
-        });
+          // Botón para mostrar registros
+          $('#btnVerRegistros').click(function() {
+            $('#vistaFormulario').hide();
+            $('#vistaGraficos').hide();
+            $('#vistaRegistros').show();
+            cargarTablaRegistros();
+          });
+          // Botón para mostrar gráficos
+          $('#btnVerGraficos').click(function() {
+            $('#vistaFormulario').hide();
+            $('#vistaRegistros').hide();
+            $('#vistaGraficos').show();
+            renderGraficos();
+          });
+          // Funciones del botón Volver eliminadas según solicitud
       });
     </script>
 </script>

@@ -62,7 +62,12 @@
                         </div>
                         <!-- Botón Exportar -->
                         <div class="col-md-auto d-flex align-items-center ms-2">
-                            <a href="{{route('orgs.readings.export',$org->id)}}" class="btn btn-primary pulse-btn p-1 px-2 rounded-2">
+                            <a
+                                href="{{ route('orgs.services.export', ['id' => $org->id] + request()->only(['sector','nro','search','sort','order'])) }}"
+                                class="btn btn-primary pulse-btn p-1 px-2 rounded-2 enhanced-btn"
+                                id="exportBtn"
+                                target="_blank"
+                                tabindex="0">
                                 <i class="bi bi-box-arrow-right me-2"></i>Exportar
                             </a>
                         </div>
@@ -140,10 +145,7 @@
                     </table>
                 </div>
 
-                <!-- Paginación -->
-                <div class="mt-4">
-                    {!! $services->render('pagination::bootstrap-4') !!}
-                </div>
+                <!-- Sin paginación -->
             </div>
         </div>
     </section>
@@ -235,18 +237,67 @@
             color: var(--bs-primary) !important;
         }
     </style>
-@endpush
 
 @push('scripts')
+
+    <!-- Incluyo SheetJS y el script de exportación justo antes de </body> para máxima compatibilidad -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const form = document.getElementById('filterForm');
-            if (form) {
-                form.addEventListener('submit', function(event) {
-                    event.preventDefault();
-                    alert('Filtro aplicado correctamente');
-                });
+    document.addEventListener('DOMContentLoaded', function() {
+        var exportBtn = document.getElementById('exportBtn');
+        if (exportBtn) {
+            exportBtn.onclick = function(e) {
+                e.preventDefault();
+                try {
+                    // Selecciona la tabla específica de servicios usando clase/table-responsive
+                    var table = document.querySelector('.table-responsive table');
+                    if (!table) {
+                        console.error('No se encontró la tabla de servicios para exportar.');
+                        alert('No se encontró ninguna tabla para exportar.');
+                        return;
+                    }
+                    // Clona la tabla para exportar solo las filas visibles
+                    var clone = table.cloneNode(true);
+                    // Elimina las filas ocultas (por filtro, display:none)
+                    Array.from(clone.querySelectorAll('tbody tr')).forEach(function(row) {
+                        if (row.style.display === 'none') {
+                            row.parentNode.removeChild(row);
+                        }
+                    });
+                    var wb = XLSX.utils.table_to_book(clone, {sheet: 'Servicios'});
+                    XLSX.writeFile(wb, 'servicios_exportados.xlsx');
+                } catch (err) {
+                    console.error('Error al exportar:', err);
+                    alert('Error al exportar: ' + err.message);
+                }
             }
-        });
+        }
+    });
+    </script>
+@endpush
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var exportBtn = document.getElementById('exportBtn');
+        if (exportBtn) {
+            exportBtn.onclick = function(e) {
+                e.preventDefault();
+                try {
+                    // Selecciona la tabla específica de servicios usando clase/table-responsive
+                    var table = document.querySelector('.table-responsive table');
+                    if (!table) {
+                        console.error('No se encontró la tabla de servicios para exportar.');
+                        alert('No se encontró ninguna tabla para exportar.');
+                        return;
+                    }
+                    var wb = XLSX.utils.table_to_book(table, {sheet: 'Servicios'});
+                    XLSX.writeFile(wb, 'servicios_exportados.xlsx');
+                } catch (err) {
+                    console.error('Error al exportar:', err);
+                    alert('Error al exportar: ' + err.message);
+                }
+            }
+        }
+    });
     </script>
 @endpush

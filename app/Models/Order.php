@@ -11,9 +11,20 @@ class Order extends Model
     use HasFactory;
     use SoftDeletes;
     
+    protected $fillable = [
+        'order_code',
+        'dni',
+        'name',
+        'email',
+        'phone',
+        'qty',
+        'total',
+        'payment_method_id',
+    ];
+
     public function items()
-{
-    return $this->hasMany(OrderItem::class);
-}
+    {
+        return $this->hasMany(OrderItem::class);
+    }
 
 }

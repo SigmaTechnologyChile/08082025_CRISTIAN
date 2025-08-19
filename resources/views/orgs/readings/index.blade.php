@@ -341,7 +341,7 @@
                     </div>
                     <!-- Botón Exportar -->
                     <div class="col-md-auto d-flex align-items-center ms-2">
-                        <a href="#" class="btn btn-primary pulse-btn p-1 px-2 rounded-2 enhanced-btn disabled" tabindex="-1" aria-disabled="true">
+                        <a href="#" id="exportBtn" class="btn btn-primary pulse-btn p-1 px-2 rounded-2 enhanced-btn disabled" tabindex="-1" aria-disabled="true">
                             <i class="bi bi-box-arrow-right me-2"></i>Exportar
                         </a>
                     </div>
@@ -645,6 +645,9 @@
                         <div class="alert alert-warning d-flex align-items-center gap-2">
                             <i class="fas fa-exclamation-triangle text-warning"></i>
                             <span>Ejemplo de formato requerido:</span>
+                            <a href="{{ asset('plantilla_carga_lecturas_masiva.xlsx') }}" download class="btn btn-success btn-sm ms-3">
+                                <i class="fas fa-file-download me-1"></i> Descargar modelo Excel
+                            </a>
                         </div>
                         <div class="table-responsive rounded-3 border">
                             <table class="table table-bordered mb-0">
@@ -1641,16 +1644,33 @@ document.addEventListener('DOMContentLoaded', function() {
                     return obj;
                 });
                 // Enviar por AJAX (POST)
-                fetch("{{ route('orgs.readings.mass_upload', $org->id) }}", {
+                fetch("{{ route('guardar-lecturas') }}", {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     },
-                    body: JSON.stringify({ data: rows })
+                    body: JSON.stringify({ lecturas: rows })
                 })
-                .then(response => response.json())
-                .then(result => {
+                .then(async response => {
+                    let result;
+                    try {
+                        result = await response.json();
+                    } catch (e) {
+                        // Si la respuesta no es JSON, mostrar error genérico
+                        step2.classList.add('d-none');
+                        step3.classList.remove('d-none');
+                        nextButton.textContent = 'Finalizar';
+                        updateSteps(3);
+                        currentStep = 3;
+                        const totalRegistros = rows.length;
+                        document.getElementById('totalToImport').textContent = totalRegistros;
+                        document.getElementById('importedCount').textContent = 0;
+                        document.getElementById('importedCount2').textContent = 0;
+                        document.getElementById('errorCount').textContent = totalRegistros;
+                        alert('Error al importar: respuesta no válida del servidor.');
+                        return;
+                    }
                     // Mostrar resultado en el paso 3
                     step2.classList.add('d-none');
                     step3.classList.remove('d-none');
@@ -1660,9 +1680,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Actualizar los contadores
                     const totalRegistros = rows.length;
                     document.getElementById('totalToImport').textContent = totalRegistros;
-                    document.getElementById('importedCount').textContent = result.success || totalRegistros;
-                    document.getElementById('importedCount2').textContent = result.success || totalRegistros;
-                    document.getElementById('errorCount').textContent = result.errors || 0;
+                    document.getElementById('importedCount').textContent = result.guardadas || 0;
+                    document.getElementById('importedCount2').textContent = result.guardadas || 0;
+                    document.getElementById('errorCount').textContent = (result.errores ? result.errores.length : 0);
                 })
                 .catch(error => {
                     step2.classList.add('d-none');
@@ -1682,8 +1702,9 @@ document.addEventListener('DOMContentLoaded', function() {
             else if (currentStep === 3) {
 
                 const modal = bootstrap.Modal.getInstance(uploadModal);
-
                 modal.hide();
+                // Recargar la página para mostrar los datos actualizados
+                window.location.reload();
 
             }
 
@@ -1752,6 +1773,20 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (countText) {
             countText.textContent = filasConLectura + '/' + totalFilas;
+        }
+        
+        // Habilitar/deshabilitar el botón Exportar
+        const exportBtn = document.getElementById('exportBtn');
+        if (exportBtn) {
+            if (filasConLectura > 0) {
+                exportBtn.classList.remove('disabled');
+                exportBtn.removeAttribute('aria-disabled');
+                exportBtn.setAttribute('tabindex', '0');
+            } else {
+                exportBtn.classList.add('disabled');
+                exportBtn.setAttribute('aria-disabled', 'true');
+                exportBtn.setAttribute('tabindex', '-1');
+            }
         }
     }
 
@@ -1851,8 +1886,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Exportar tabla visible a Excel
+    document.getElementById('exportBtn').addEventListener('click', function(e) {
+        e.preventDefault();
+        if (this.classList.contains('disabled')) return;
+        // Selecciona la tabla principal de lecturas
+        var table = document.querySelector('table.table-bordered');
+        if (!table) {
+            alert('No se encontró la tabla de lecturas.');
+            return;
+        }
+        // Convierte la tabla HTML a una hoja de Excel usando SheetJS
+        var wb = XLSX.utils.table_to_book(table, {sheet: 'Lecturas'});
+        XLSX.writeFile(wb, 'lecturas_exportadas.xlsx');
+    });
 });
-
 </script>
 
 @endsection

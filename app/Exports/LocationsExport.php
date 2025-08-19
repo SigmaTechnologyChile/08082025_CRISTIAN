@@ -8,23 +8,32 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 
 class LocationsExport implements FromCollection, WithHeadings
 {
-    /**
-     * Retorna la colección de sectores para exportar.
-     */
-    public function collection()
+    protected $orgId;
+    protected $search;
+
+    public function __construct($orgId = null, $search = null)
     {
-        return Location::select('id', 'name' )->get();
+        $this->orgId = $orgId;
+        $this->search = $search;
     }
 
-    /**
-     * Define los encabezados del archivo Excel.
-     */
+    public function collection()
+    {
+        $query = Location::query();
+        if ($this->orgId) {
+            $query->where('org_id', $this->orgId);
+        }
+        if ($this->search) {
+            $query->where('name', 'like', '%'.$this->search.'%');
+        }
+        return $query->select('id', 'name')->get();
+    }
+
     public function headings(): array
     {
         return [
             'ID',
             'Sector'
-            
         ];
     }
 }

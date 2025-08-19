@@ -67,17 +67,36 @@
                         </button>
                     </div>
                     <!-- Botón Exportar -->
+                        <!-- Botón Exportar eliminado -->
                         <div class="col-md-auto d-flex align-items-center ms-2">
-@php
-    $disabled = true;
-@endphp
-
-<a href="{{ $disabled ? '#' : route('orgs.readings.export', $org->id) }}"
-   class="btn btn-primary pulse-btn p-1 px-2 rounded-2 {{ $disabled ? 'disabled' : '' }}"
-   aria-disabled="{{ $disabled ? 'true' : 'false' }}"
-   onclick="{{ $disabled ? 'return false;' : '' }}">
-    <i class="bi bi-box-arrow-right me-2"></i>Exportar
-</a>
+                            <a href="#" id="exportBtn" class="btn btn-primary pulse-btn p-1 px-2 rounded-2 enhanced-btn" tabindex="0">
+                                <i class="bi bi-box-arrow-right me-2"></i>Exportar
+                            </a>
+                        </div>
+@section('js')
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var exportBtn = document.getElementById('exportBtn');
+    if (exportBtn) {
+        exportBtn.onclick = function(e) {
+            e.preventDefault();
+            try {
+                var table = document.querySelector('table');
+                if (!table) {
+                    alert('No se encontró ninguna tabla para exportar.');
+                    return;
+                }
+                var wb = XLSX.utils.table_to_book(table, {sheet: 'HistorialPagos'});
+                XLSX.writeFile(wb, 'historial_pagos.xlsx');
+            } catch (err) {
+                alert('Error al exportar: ' + err.message);
+            }
+        }
+    }
+});
+</script>
+@endsection
                     </div>
                         </div>
                     </form>
@@ -162,7 +181,7 @@
     </table>
 </div>
             </div>
-            <div class="card-footer">{!! $order_items->render('pagination::bootstrap-4') !!} </div>
+            {{-- Sin paginación para mostrar todo el historial --}}
         </div>
     </section>
 

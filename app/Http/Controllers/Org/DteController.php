@@ -31,7 +31,7 @@ class DteController extends Controller
 
     public function historyDTE(Request $request, $id)
     {
-        $org = $this->org;
+    $org = Org::find($id);
 
         $start_date = $request->input('start_date');
         $end_date   = $request->input('end_date');

@@ -1,6 +1,5 @@
 <?php
-
-namespace App\Http\Controllers\Org;
+    namespace App\Http\Controllers\Org;
 
 use App\Http\Controllers\Controller;
 use App\Models\Cuenta;
@@ -1101,16 +1100,39 @@ class ContableController extends Controller
 
     public function mostrarLibroCaja($id)
     {
-        // HABILITADO: tabla movimientos recreada exitosamente
         $movimientos = \App\Models\Movimiento::where('org_id', $id)
             ->orderBy('fecha', 'desc')
             ->get();
-        
-        // $movimientos = collect(); // Array vacío temporal - YA NO NECESARIO
         $resumen = $this->getResumenSaldos($id);
+        $bancos = \App\Models\Banco::all();
+
+        // Calcular totales para la vista tabular
+        $saldoCajaGeneral = $resumen['cuentaCajaGeneralOperativa']->saldo_actual ?? 0;
+        $saldoCuentaCorriente1 = $resumen['cuentaCorriente1Operativa']->saldo_actual ?? 0;
+        $saldoCuentaCorriente2 = $resumen['cuentaCorriente2Operativa']->saldo_actual ?? 0;
+        $saldoCuentaAhorro = $resumen['cuentaAhorroOperativa']->saldo_actual ?? 0;
+        $saldoTotal = $saldoCajaGeneral + $saldoCuentaCorriente1 + $saldoCuentaCorriente2 + $saldoCuentaAhorro;
+
+        $totalIngresos = $movimientos->where('tipo', 'ingreso')->sum('monto');
+        $totalEgresos = $movimientos->where('tipo', 'egreso')->sum('monto');
+        $saldoFinal = $saldoTotal + $totalIngresos - $totalEgresos;
+
+        // Detectar si el usuario es CRC
+        $usuarioCRC = (auth()->user()->rol ?? '') === 'crc';
+
         return view('orgs.contable.libro-caja', array_merge([
             'orgId' => $id,
             'movimientos' => $movimientos,
+            'bancos' => $bancos,
+            'saldoCajaGeneral' => $saldoCajaGeneral,
+            'saldoCuentaCorriente1' => $saldoCuentaCorriente1,
+            'saldoCuentaCorriente2' => $saldoCuentaCorriente2,
+            'saldoCuentaAhorro' => $saldoCuentaAhorro,
+            'saldoTotal' => $saldoTotal,
+            'totalIngresos' => $totalIngresos,
+            'totalEgresos' => $totalEgresos,
+            'saldoFinal' => $saldoFinal,
+            'usuarioCRC' => $usuarioCRC,
         ], $resumen));
     }
 
@@ -1524,19 +1546,15 @@ class ContableController extends Controller
             ];
 
             foreach ($cuentasParaGuardar as $cuentaData) {
-                ConfiguracionCuentasIniciales::updateOrCreate(
-                    [
-                        'org_id' => $id,
-                        'tipo_cuenta' => $cuentaData['tipo_cuenta']
-                    ],
-                    [
-                        'saldo_inicial' => $cuentaData['saldo'],
-                        'banco_id' => $cuentaData['banco_id'],
-                        'nombre_banco' => $cuentaData['nombre_banco'],
-                        'numero_cuenta' => $cuentaData['numero'],
-                        'responsable' => $cuentaData['responsable'],
-                    ]
-                );
+                ConfiguracionCuentasIniciales::create([
+                    'org_id' => $id,
+                    'tipo_cuenta' => $cuentaData['tipo_cuenta'],
+                    'saldo_inicial' => $cuentaData['saldo'],
+                    'banco_id' => $cuentaData['banco_id'],
+                    'nombre_banco' => $cuentaData['nombre_banco'],
+                    'numero_cuenta' => $cuentaData['numero'],
+                    'responsable' => $cuentaData['responsable'],
+                ]);
             }
 
             \DB::commit();
@@ -1630,7 +1648,7 @@ class ContableController extends Controller
                         'id', 'fecha', 'descripcion', 'tipo', 'monto',
                         'total_consumo', 'cuotas_incorporacion', 'otros_ingresos', 'giros',
                         'energia_electrica', 'sueldos_leyes', 'otros_gastos_operacion',
-                        'gastos_mantencion', 'gastos_administracion', 'gastos_mejoramiento',
+                        'gastos_mantencion', 'gastos_administrativos', 'gastos_mejoramiento',
                         'otros_egresos', 'depositos'
                     ];
                     foreach ($props as $prop) {
@@ -1665,7 +1683,7 @@ class ContableController extends Controller
                         'sueldos_leyes' => 0,
                         'otros_gastos_operacion' => 0,
                         'gastos_mantencion' => 0,
-                        'gastos_administracion' => 0,
+                        'gastos_administrativos' => 0,
                         'gastos_mejoramiento' => 0,
                         'otros_egresos' => 0,
                         'depositos' => 0,
@@ -2179,16 +2197,10 @@ class ContableController extends Controller
                 'razon_social' => 'nullable|string|max:200',
                 'rut_proveedor' => 'nullable|string|max:20'
             ]);
-
-            \DB::beginTransaction();
-
-            // Buscar la cuenta origen
             $cuentaOrigen = \App\Models\Cuenta::find($request->cuenta_origen);
             if (!$cuentaOrigen) {
                 throw new \Exception('Cuenta origen no encontrada');
             }
-
-            // Verificar saldo suficiente
             if ($cuentaOrigen->saldo_actual < $request->monto) {
                 throw new \Exception("Saldo insuficiente. Saldo actual: $" . number_format((float)$cuentaOrigen->saldo_actual, 2));
             }

@@ -67,7 +67,7 @@
                     </div>
                     <!-- Botón Exportar -->
                         <div class="col-md-auto d-flex align-items-center ms-2">
-                        <a href="{{route('orgs.readings.export',$org->id)}}" class="btn btn-primary pulse-btn p-1 px-2 rounded-2">
+                        <a href="#" id="exportBtn" class="btn btn-primary pulse-btn p-1 px-2 rounded-2 enhanced-btn" tabindex="0">
                             <i class="bi bi-box-arrow-right me-2"></i>Exportar
                         </a>
                     </div>
@@ -78,16 +78,56 @@
                 <table class="table table-bordered table-hover">
                     <thead class="table-light">
                         <tr>
-    <th scope="col" class="text-center">Lec.</th>
-    <th scope="col" class="text-center">Periodo</th>
-    <th scope="col" class="text-center">Sector</th>
-    <th scope="col" class="text-center">nro Servicio</th>
-    <th scope="col" class="text-center">RUT/RUN</th>
-    <th scope="col" class="text-center">Nombre/Apellido</th>
-    <th scope="col" class="text-center">Fecha Reg.</th>
-    <th scope="col" class="text-center">Lectura</th>
-    <th scope="col" class="text-center">Consumo Mes</th>
-    <th scope="col" class="text-center">Monto Mes</th>
+    <th scope="col" class="text-center">
+        Lec.
+        <a href="{{ request()->fullUrlWithQuery(['sort' => 'id', 'order' => 'asc']) }}"><i class="bi bi-arrow-up"></i></a>
+        <a href="{{ request()->fullUrlWithQuery(['sort' => 'id', 'order' => 'desc']) }}"><i class="bi bi-arrow-down"></i></a>
+    </th>
+    <th scope="col" class="text-center">
+        Periodo
+        <a href="{{ request()->fullUrlWithQuery(['sort' => 'period', 'order' => 'asc']) }}"><i class="bi bi-arrow-up"></i></a>
+        <a href="{{ request()->fullUrlWithQuery(['sort' => 'period', 'order' => 'desc']) }}"><i class="bi bi-arrow-down"></i></a>
+    </th>
+    <th scope="col" class="text-center">
+        Sector
+        <a href="{{ request()->fullUrlWithQuery(['sort' => 'location_name', 'order' => 'asc']) }}"><i class="bi bi-arrow-up"></i></a>
+        <a href="{{ request()->fullUrlWithQuery(['sort' => 'location_name', 'order' => 'desc']) }}"><i class="bi bi-arrow-down"></i></a>
+    </th>
+    <th scope="col" class="text-center">
+        nro Servicio
+        <a href="{{ request()->fullUrlWithQuery(['sort' => 'nro', 'order' => 'asc']) }}"><i class="bi bi-arrow-up"></i></a>
+        <a href="{{ request()->fullUrlWithQuery(['sort' => 'nro', 'order' => 'desc']) }}"><i class="bi bi-arrow-down"></i></a>
+    </th>
+    <th scope="col" class="text-center">
+        RUT/RUN
+        <a href="{{ request()->fullUrlWithQuery(['sort' => 'rut', 'order' => 'asc']) }}"><i class="bi bi-arrow-up"></i></a>
+        <a href="{{ request()->fullUrlWithQuery(['sort' => 'rut', 'order' => 'desc']) }}"><i class="bi bi-arrow-down"></i></a>
+    </th>
+    <th scope="col" class="text-center">
+        Nombre/Apellido
+        <a href="{{ request()->fullUrlWithQuery(['sort' => 'full_name', 'order' => 'asc']) }}"><i class="bi bi-arrow-up"></i></a>
+        <a href="{{ request()->fullUrlWithQuery(['sort' => 'full_name', 'order' => 'desc']) }}"><i class="bi bi-arrow-down"></i></a>
+    </th>
+    <th scope="col" class="text-center">
+        Fecha Reg.
+        <a href="{{ request()->fullUrlWithQuery(['sort' => 'period', 'order' => 'asc']) }}"><i class="bi bi-arrow-up"></i></a>
+        <a href="{{ request()->fullUrlWithQuery(['sort' => 'period', 'order' => 'desc']) }}"><i class="bi bi-arrow-down"></i></a>
+    </th>
+    <th scope="col" class="text-center">
+        Lectura
+        <a href="{{ request()->fullUrlWithQuery(['sort' => 'current_reading', 'order' => 'asc']) }}"><i class="bi bi-arrow-up"></i></a>
+        <a href="{{ request()->fullUrlWithQuery(['sort' => 'current_reading', 'order' => 'desc']) }}"><i class="bi bi-arrow-down"></i></a>
+    </th>
+    <th scope="col" class="text-center">
+        Consumo Mes
+        <a href="{{ request()->fullUrlWithQuery(['sort' => 'cm3', 'order' => 'asc']) }}"><i class="bi bi-arrow-up"></i></a>
+        <a href="{{ request()->fullUrlWithQuery(['sort' => 'cm3', 'order' => 'desc']) }}"><i class="bi bi-arrow-down"></i></a>
+    </th>
+    <th scope="col" class="text-center">
+        Monto Mes
+        <a href="{{ request()->fullUrlWithQuery(['sort' => 'total', 'order' => 'asc']) }}"><i class="bi bi-arrow-up"></i></a>
+        <a href="{{ request()->fullUrlWithQuery(['sort' => 'total', 'order' => 'desc']) }}"><i class="bi bi-arrow-down"></i></a>
+    </th>
     <th scope="col" class="text-center">Documento</th>
 </tr>
 </thead>
@@ -150,7 +190,7 @@
                 </table>
             </div>
         </div>
-        <div class="card-footer">{!! $readings->render('pagination::bootstrap-4') !!}</div>
+    <!-- Paginación eliminada -->
     </div>
 </section>
 
@@ -158,6 +198,7 @@
 
 
 @section('js')
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -190,5 +231,24 @@ function openModal(readingId, currentReading) {
     $('#editReadingModal').modal('show');
 }
 
+window.addEventListener('load', function() {
+    var exportBtn = document.getElementById('exportBtn');
+    if (exportBtn) {
+        exportBtn.onclick = function(e) {
+            e.preventDefault();
+            try {
+                var table = document.querySelector('table');
+                if (!table) {
+                    alert('No se encontró ninguna tabla para exportar.');
+                    return;
+                }
+                var wb = XLSX.utils.table_to_book(table, {sheet: 'Historial'});
+                XLSX.writeFile(wb, 'historial_lecturas.xlsx');
+            } catch (err) {
+                alert('Error al exportar: ' + err.message);
+            }
+        }
+    }
+});
 </script>
 @endsection

@@ -475,7 +475,7 @@
           <i class="bi bi-arrow-left-right"></i>
           Giros y Depósitos
         </h1>
-        <p>Movimientos entre cuentas bancarias y caja general</p>
+                    $ {{ number_format((float)$movimientos->sum('monto'), 0, ',', '.') }}
       </div>
     </div>
 
@@ -674,7 +674,7 @@
                     {{ $mov->cuenta_destino_id ? ($cuentas->find($mov->cuenta_destino_id)->tipo ?? '-') : '-' }}
                   @endif
                 </td>
-                <td>$ {{ number_format((float)$mov->monto, 0, ',', '.') }}</td>
+                  <td>$ {{ number_format((float)$mov->monto, 2, ',', '.') }}</td>
                 <td>{{ $mov->descripcion }}</td>
                 <td>
                   @if(!empty($mov->nro_dcto))

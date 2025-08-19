@@ -16,7 +16,7 @@
     <section class="section dashboard">
         <div class="card top-selling overflow-auto">
             <div class="card-body pt-2">
-                <form method="GET" id="filterForm" action="{{ route('orgs.historyDTE', $org->id) }}">
+                <form method="GET" id="filterForm" action="{{ route('historyDTE', ['id' => $org->id]) }}">
                     <div class="row g-2 align-items-end flex-nowrap" style="width: 100%; overflow-x: auto;">
     <!-- Fecha Desde -->
     <div class="col-auto flex-grow-1" style="min-width: 180px;">

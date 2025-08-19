@@ -47,9 +47,14 @@ class DashboardController extends Controller
 public function misOrganizaciones()
 {
     $user = Auth::user();
-    $member = Member::where('rut', $user->rut)->first();
-    $org = $member?->orgs()->first();
-
+    // Si es SuperAdmin, usar orgId de la sesión si existe
+    if ($user->isSuperAdmin()) {
+        $orgId = session('orgId', $user->org_id);
+        $org = \App\Models\Org::find($orgId);
+    } else {
+        $member = Member::where('rut', $user->rut)->first();
+        $org = $member?->orgs()->first();
+    }
     return view('dashboardmisorganizaciones', compact('org'));
 }
 }

@@ -1,756 +1,569 @@
-@extends('layouts.app')
+@extends('layouts.nice', ['active' => 'orgs.libro.caja', 'title' => 'Libro de Caja Tabular'])
+
+{{-- CSS personalizado para vista tabular --}}
+<style>
+:root {
+  --primary-color: #2c5282;
+  --secondary-color: #4CAF50;
+  --danger-color: #e53e3e;
+  --success-color: #48bb78;
+  --warning-color: #dd6b20;
+  --purple-color: #805ad5;
+  --orange-color: #dd6b20;
+  --light-bg: #f8f9fa;
+}
+
+.libro-caja-section {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.section-header {
+  text-align: center;
+  margin: 20px 0 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.section-header h1 {
+  color: var(--primary-color);
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+  position: relative;
+  display: inline-block;
+  padding-bottom: 15px;
+}
+
+.section-header h1::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 150px;
+  height: 4px;
+  background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+  border-radius: 2px;
+}
+
+.section-header p {
+  color: #4a5568;
+  font-size: 1.1rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.saldo-section {
+  background: linear-gradient(135deg, #2c5282, #1a365d);
+  border-radius: 12px;
+  padding: 25px;
+  color: white;
+  margin-bottom: 30px;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+}
+
+.saldo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.saldo-item {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 15px;
+  border-radius: 8px;
+  backdrop-filter: blur(5px);
+}
+
+.saldo-item label {
+  color: #ebf8ff;
+  font-size: 1rem;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.saldo-item input {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  font-size: 1.2rem;
+  font-weight: 600;
+  padding: 10px;
+  width: 100%;
+  border-radius: 6px;
+}
+
+/* TOTALES EN FILA HORIZONTAL */
+.totals-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+}
+
+.total-card {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  text-align: center;
+  transition: transform 0.3s ease;
+  flex: 1;
+  min-width: 250px;
+}
+
+.total-card:hover {
+  transform: translateY(-5px);
+}
+
+.total-card.ingresos {
+  border-top: 5px solid var(--success-color);
+}
+
+.total-card.egresos {
+  border-top: 5px solid var(--danger-color);
+}
+
+.total-card.saldo {
+  border-top: 5px solid var(--primary-color);
+}
+
+.total-card.ahorro {
+  border-top: 5px solid var(--purple-color);
+}
+
+.total-card h3 {
+  font-size: 1.2rem;
+  color: #4a5568;
+  margin-bottom: 15px;
+}
+
+.total-card .value {
+  font-size: 2.2rem;
+  font-weight: 700;
+}
+
+.total-card.ingresos .value {
+  color: var(--success-color);
+}
+
+.total-card.egresos .value {
+  color: var(--danger-color);
+}
+
+.total-card.saldo .value {
+  color: var(--primary-color);
+}
+
+.total-card.ahorro .value {
+  color: var(--purple-color);
+}
+
+.table-container {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  overflow-x: auto;
+  margin-bottom: 30px;
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.table-header h2 {
+  color: var(--primary-color);
+  font-size: 1.6rem;
+  font-weight: 600;
+}
+
+.filters {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.filter-group label {
+  font-size: 0.9rem;
+  margin-bottom: 5px;
+  color: #4a5568;
+}
+
+.filter-group input, .filter-group select {
+  padding: 8px 12px;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1000px;
+}
+
+thead {
+  background: linear-gradient(120deg, var(--primary-color), #1a365d);
+  color: white;
+}
+
+th {
+  padding: 16px 12px;
+  text-align: center;
+  font-weight: 600;
+  border: 1px solid #2c5282;
+}
+
+.ingresos-header {
+  background: #2c5282;
+}
+
+.egresos-header {
+  background: #1a365d;
+}
+
+tbody tr {
+  border-bottom: 1px solid #e2e8f0;
+  transition: background-color 0.2s;
+}
+
+tbody tr:nth-child(even) {
+  background-color: #f8fafc;
+}
+
+tbody tr:hover {
+  background-color: #ebf8ff;
+}
+
+td {
+  padding: 14px 10px;
+  text-align: center;
+  border: 1px solid #e2e8f0;
+  font-size: 14px;
+}
+
+.ingreso-cell {
+  background-color: #f0fff4;
+  color: #2f855a;
+  font-weight: 500;
+}
+
+.egreso-cell {
+  background-color: #fff5f5;
+  color: #c53030;
+  font-weight: 500;
+}
+
+.action-button {
+  padding: 14px 30px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.action-button.volver {
+  background: linear-gradient(120deg, #718096, #4a5568);
+  color: white;
+}
+
+.button-group {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 30px;
+  flex-wrap: wrap;
+}
+
+/* RESPONSIVE DESIGN */
+@media (max-width: 900px) {
+  .libro-caja-section {
+    padding: 10px;
+  }
+  .section-header h1 {
+    font-size: 2rem;
+  }
+  .totals-container {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .total-card {
+    min-width: 180px;
+    padding: 15px;
+  }
+  .table-container {
+    padding: 10px;
+  }
+  .table-header h2 {
+    font-size: 1.2rem;
+  }
+  th, td {
+    padding: 8px 4px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 600px) {
+  .libro-caja-section {
+    padding: 5px;
+  }
+  .section-header {
+    flex-direction: column;
+    gap: 10px;
+    margin: 10px 0 20px;
+  }
+  .section-header h1 {
+    font-size: 1.3rem;
+    padding-bottom: 8px;
+  }
+  .section-header h1::after {
+    width: 80px;
+    height: 2px;
+  }
+  .section-header p {
+    font-size: 0.9rem;
+    max-width: 100%;
+  }
+  .saldo-section {
+    padding: 10px;
+    border-radius: 8px;
+  }
+  .saldo-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .saldo-item {
+    padding: 8px;
+    border-radius: 6px;
+  }
+  .totals-container {
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 15px;
+  }
+  .total-card {
+    min-width: 120px;
+    padding: 10px;
+    font-size: 0.9rem;
+  }
+  .total-card h3 {
+    font-size: 1rem;
+    margin-bottom: 8px;
+  }
+  .total-card .value {
+    font-size: 1.2rem;
+  }
+  .table-container {
+    padding: 5px;
+    border-radius: 6px;
+  }
+  .table-header {
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .table-header h2 {
+    font-size: 1rem;
+  }
+  .filters {
+    flex-direction: column;
+    gap: 6px;
+  }
+  th, td {
+    padding: 4px 2px;
+    font-size: 10px;
+  }
+  table {
+    min-width: 600px;
+  }
+}
+</style>
 
 @section('content')
-@include('orgs.contable.partials.contable-styles')
-
-<style>
-/* Estilos específicos para Libro de Caja */
-.libro-caja-container {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: var(--spacing-xl);
-}
-
-.libro-caja-header {
-    background: linear-gradient(135deg, var(--success-color) 0%, #20c997 100%);
-    color: white;
-    padding: var(--spacing-xl);
-    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-    margin: calc(-1 * var(--spacing-xl)) calc(-1 * var(--spacing-xl)) var(--spacing-xl) calc(-1 * var(--spacing-xl));
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .libro-caja-header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;
-            pointer-events: none;
-        }
-        
-        .filtros-modernos {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: var(--spacing-lg);
-            margin-bottom: var(--spacing-2xl);
-            padding: var(--spacing-xl);
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-            border-radius: var(--radius-xl);
-            border: 1px solid var(--border-color);
-            box-shadow: var(--shadow-md);
-        }
-        
-        .filtro-grupo {
-            display: flex;
-            flex-direction: column;
-            gap: var(--spacing-sm);
-        }
-        
-        .filtro-label {
-            font-weight: 600;
-            color: var(--text-primary);
-            font-size: 0.95rem;
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-xs);
-        }
-        
-        .filtro-label i {
-            color: var(--primary-color);
-            font-size: 1.1rem;
-        }
-        
-        .tabla-libro-caja {
-            background: white;
-            border-radius: var(--radius-xl);
-            box-shadow: var(--shadow-lg);
-            overflow: hidden;
-            border: 1px solid var(--border-color);
-            margin-bottom: var(--spacing-xl);
-        }
-        
-        .tabla-libro-caja table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        .tabla-libro-caja thead {
-            background: linear-gradient(135deg, var(--primary-color) 0%, #4299e1 100%);
-            color: white;
-        }
-        
-        .tabla-libro-caja thead th {
-            padding: 18px 16px;
-            text-align: left;
-            font-weight: 600;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            position: relative;
-        }
-        
-        .tabla-libro-caja tbody tr {
-            border-bottom: 1px solid var(--border-color);
-            transition: all 0.2s ease;
-        }
-        
-        .tabla-libro-caja tbody tr:hover {
-            background-color: #f8fafc;
-            transform: translateX(2px);
-        }
-        
-        .tabla-libro-caja tbody td {
-            padding: 16px;
-            color: var(--text-primary);
-            font-weight: 500;
-        }
-        
-        .monto-ingreso {
-            color: var(--success-color);
-            font-weight: 700;
-        }
-        
-        .monto-egreso {
-            color: var(--danger-color);
-            font-weight: 700;
-        }
-        
-        .monto-saldo {
-            color: var(--primary-color);
-            font-weight: 700;
-            background: rgba(44, 82, 130, 0.1);
-            padding: 6px 12px;
-            border-radius: var(--radius-md);
-        }
-        
-        .resumen-totales {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: var(--spacing-lg);
-            margin-top: var(--spacing-xl);
-        }
-        
-        .total-card {
-            background: white;
-            border-radius: var(--radius-xl);
-            padding: var(--spacing-xl);
-            box-shadow: var(--shadow-lg);
-            border: 1px solid var(--border-color);
-            transition: all 0.3s ease;
-            text-align: center;
-        }
-        
-        .total-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-xl);
-        }
-        
-        .total-card-icon {
-            font-size: 2.5rem;
-            margin-bottom: var(--spacing-md);
-            opacity: 0.8;
-        }
-        
-        .total-card-ingreso {
-            border-left: 4px solid var(--success-color);
-        }
-        
-        .total-card-ingreso .total-card-icon {
-            color: var(--success-color);
-        }
-        
-        .total-card-egreso {
-            border-left: 4px solid var(--danger-color);
-        }
-        
-        .total-card-egreso .total-card-icon {
-            color: var(--danger-color);
-        }
-        
-        .total-card-saldo {
-            border-left: 4px solid var(--primary-color);
-        }
-        
-        .total-card-saldo .total-card-icon {
-            color: var(--primary-color);
-        }
-        
-        .total-valor {
-            font-size: 1.75rem;
-            font-weight: 700;
-            margin-bottom: var(--spacing-xs);
-        }
-        
-        .total-label {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        /* Responsivo mejorado */
-        @media (max-width: 768px) {
-            .libro-caja-container {
-                padding: var(--spacing-md);
-            }
-            
-            .filtros-modernos {
-                grid-template-columns: 1fr;
-                padding: var(--spacing-lg);
-            }
-            
-            .tabla-libro-caja {
-                overflow-x: auto;
-            }
-            
-            .tabla-libro-caja table {
-                min-width: 800px;
-            }
-            
-            .resumen-totales {
-                grid-template-columns: 1fr;
-            }
-            
-            .libro-caja-header {
-                flex-direction: column;
-                gap: var(--spacing-md);
-                text-align: center;
-            }
-        }
-    </style>
-        
-        .form-group {
-            margin-bottom: 0;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #333;
-        }
-        
-        .form-group input,
-        .form-group select {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: border-color 0.3s ease;
-        }
-        
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: #28a745;
-            box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
-        }
-
-        }
-        
-        .libro-caja-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
-        
-        .libro-caja-table th {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            color: white;
-            padding: 15px 12px;
-            text-align: left;
-            font-weight: 600;
-            font-size: 14px;
-        }
-        
-        .libro-caja-table td {
-            padding: 12px;
-            border-bottom: 1px solid #e9ecef;
-            font-size: 14px;
-        }
-        
-        .libro-caja-table tbody tr:hover {
-            background-color: #f8f9fa;
-        }
-        
-        .libro-caja-table tbody tr:nth-child(even) {
-            background-color: #fdfdfd;
-        }
-        
-        .tipo-ingreso {
-            background: #d1edff;
-            color: #0056b3;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        
-        .tipo-egreso {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        
-        .tipo-giro {
-            background: #fff3cd;
-            color: #856404;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        
-        .tipo-deposito {
-            background: #d4edda;
-            color: #155724;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        
-        .monto-positivo {
-            color: #28a745;
-            font-weight: 600;
-        }
-        
-        .monto-negativo {
-            color: #dc3545;
-            font-weight: 600;
-        }
-        
-        .monto-neutral {
-            color: #6c757d;
-            font-weight: 600;
-        }
-        
-        .resumen-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .resumen-card {
-            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
-            padding: 20px;
-            border-radius: 12px;
-            text-align: center;
-            border-left: 4px solid #28a745;
-        }
-        
-        .resumen-card h4 {
-            margin: 0;
-            color: #333;
-            font-size: 18px;
-        }
-        
-        .resumen-card .valor {
-            font-size: 24px;
-            font-weight: bold;
-            margin-top: 10px;
-        }
-        
-        .saldo-inicial {
-            border-left-color: #17a2b8;
-        }
-        
-        .total-ingresos {
-            border-left-color: #28a745;
-        }
-        
-        .total-egresos {
-            border-left-color: #dc3545;
-        }
-        
-        .saldo-final {
-            border-left-color: #ffc107;
-        }
-        
-        .btn-group {
-            display: flex;
-            gap: 15px;
-            margin-top: 20px;
-            flex-wrap: wrap;
-        }
-        
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            text-decoration: none;
-            justify-content: center;
-        }
-        
-        .btn-success {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            color: white;
-        }
-        
-        .btn-info {
-            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
-            color: white;
-        }
-        
-        .btn-secondary {
-            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-            color: white;
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-        }
-        
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
-            padding: 15px 20px;
-            border-radius: 8px;
-            color: white;
-            font-weight: 600;
-            display: none;
-        }
-        
-        .notification.success { background: #28a745; }
-        .notification.error { background: #dc3545; }
-        .notification.info { background: #17a2b8; }
-        
-        .nav-breadcrumb {
-            background: #f8f9fa;
-            padding: 15px 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-        
-        .nav-breadcrumb a {
-            color: #667eea;
-            text-decoration: none;
-            font-weight: 500;
-        }
-        
-        .nav-breadcrumb a:hover {
-            text-decoration: underline;
-        }
-        
-        .tabla-responsive {
-            overflow-x: auto;
-            border-radius: 8px;
-        }
-        
-        .sin-movimientos {
-            text-align: center;
-            padding: 40px;
-            color: #6c757d;
-            font-style: italic;
-        }
-        
-        .comprobante-btn {
-            background: none;
-            border: none;
-            color: #17a2b8;
-            text-decoration: underline;
-            cursor: pointer;
-            font-size: 12px;
-        }
-        
-        .comprobante-btn:hover {
-            color: #138496;
-        }
-        
-        @media (max-width: 768px) {
-            .filtros-container {
-                grid-template-columns: 1fr;
-            }
-            
-            .resumen-container {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .libro-caja-table {
-                font-size: 12px;
-            }
-            
-            .libro-caja-table th,
-            .libro-caja-table td {
-                padding: 8px 6px;
-            }
-        }
-    </style>
-</head>
-
-<div class="contable-page">
-    <div id="notification" class="contable-notification"></div>
-
-    <div class="contable-header">
-        <div class="contable-header-content">
-            <div class="contable-header-info">
-                <h1 class="contable-title">
-                    <i class="bi bi-journal-text"></i>
-                    Libro de Caja
-                </h1>
-                <p class="contable-subtitle">Registro de ingresos y egresos financieros</p>
+<div class="libro-caja-section">
+    <!-- Header de la sección -->
+  <div class="section-header">
+    <div>
+      <h1>Libro de Caja Tabular</h1>
+      <p>Registro diario de todos los movimientos financieros</p>
+    </div>
+    </div>
+    
+    <!-- Sección de saldos -->
+    <div class="saldo-section">
+        <div class="saldo-grid">
+            <div class="saldo-item">
+                <label>Saldo Caja General</label>
+                <input type="text" value="${{ number_format($saldoCajaGeneral ?? 0, 0, ',', '.') }}" readonly>
+            </div>
+            <div class="saldo-item">
+                <label>Saldo Cuenta Corriente 1</label>
+                <input type="text" value="${{ number_format($saldoCuentaCorriente1 ?? 0, 0, ',', '.') }}" readonly>
+            </div>
+            <div class="saldo-item">
+                <label>Saldo Cuenta Corriente 2</label>
+                <input type="text" value="${{ number_format($saldoCuentaCorriente2 ?? 0, 0, ',', '.') }}" readonly>
+            </div>
+            <div class="saldo-item">
+                <label>Saldo Cuenta Ahorro</label>
+                <input type="text" value="${{ number_format($saldoCuentaAhorro ?? 0, 0, ',', '.') }}" readonly>
+            </div>
+            <div class="saldo-item">
+                <label>Saldo Total</label>
+                <input type="text" value="${{ number_format($saldoTotal ?? 0, 0, ',', '.') }}" readonly>
             </div>
         </div>
     </div>
-
-    <div class="contable-content">
-        <div class="contable-card">
-
-        <div class="card">
-            <div class="card-header">
-                <div>
-                    <h1><i class="bi bi-journal-bookmark"></i> Libro de Caja Tabular</h1>
-                    <p>Registro completo de todos los movimientos financieros</p>
+    
+    <!-- TOTALES EN FILA HORIZONTAL -->
+    <div class="totals-container">
+        <div class="total-card ingresos">
+            <h3>Total Ingresos</h3>
+            <div class="value">${{ number_format($totalIngresos ?? 0, 0, ',', '.') }}</div>
+        </div>
+        <div class="total-card egresos">
+            <h3>Total Egresos</h3>
+            <div class="value">${{ number_format($totalEgresos ?? 0, 0, ',', '.') }}</div>
+        </div>
+        <div class="total-card saldo">
+            <h3>Saldo Final</h3>
+            <div class="value">${{ number_format($saldoFinal ?? 0, 0, ',', '.') }}</div>
+        </div>
+    </div>
+    
+    <!-- Tabla de movimientos -->
+    <div class="table-container">
+        <div class="table-header">
+            <h2>Movimientos Financieros</h2>
+            <div class="filters">
+                <div class="filter-group">
+                    <label>Desde</label>
+                    <input id="fechaDesde" type="date" value="{{ date('Y-m-01') }}">
                 </div>
-                <a href="/" class="btn btn-secondary">
-                    <i class="bi bi-arrow-left"></i> Volver al Dashboard
-                </a>
-            </div>
-
-            <!-- Filtros -->
-            <div class="filtros-container">
-                <div class="form-group">
-                    <label for="fechaDesde">
-                        <i class="bi bi-calendar3"></i> Fecha Desde
-                    </label>
-                    <input type="date" id="fechaDesde" value="">
+                <div class="filter-group">
+                    <label>Hasta</label>
+                    <input id="fechaHasta" type="date" value="{{ date('Y-m-d') }}">
                 </div>
-                
-                <div class="form-group">
-                    <label for="fechaHasta">
-                        <i class="bi bi-calendar3"></i> Fecha Hasta
-                    </label>
-                    <input type="date" id="fechaHasta" value="">
-                </div>
-                
-                <div class="form-group">
-                    <label for="tipoMovimiento">
-                        <i class="bi bi-filter"></i> Tipo de Movimiento
-                    </label>
-                    <select id="tipoMovimiento">
-                        <option value="">Todos</option>
-                        <option value="ingreso">Ingresos</option>
-                        <option value="egreso">Egresos</option>
-                        <option value="giro">Giros</option>
-                        <option value="deposito">Depósitos</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="buscarDetalle">
-                        <i class="bi bi-search"></i> Buscar en Detalle
-                    </label>
-                    <input type="text" id="buscarDetalle" placeholder="Buscar por detalle...">
-                </div>
-                
-                <div class="form-group" style="display: flex; align-items: end;">
-                    <button id="btnFiltrar" class="btn btn-success" style="width: 100%;">
+                <div class="filter-group">
+                    <label>&nbsp;</label>
+                    <button class="action-button" style="padding: 10px 15px;">
                         <i class="bi bi-funnel"></i> Filtrar
                     </button>
                 </div>
             </div>
-
-            <!-- Resumen -->
-            <div class="totals-container" style="display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px;">
-                <div class="total-card ingresos" style="flex: 1; background: #4CAF50; border-left: 5px solid #388E3C; border-radius: 10px; padding: 20px; text-align: center; color: #fff;">
-                    <h3 style="color: #fff; margin-bottom: 10px;">Total Ingresos</h3>
-                    <div class="value" id="totalIngresos" style="font-size: 1.5em; font-weight: bold; color: #fff;">
-                      ${{ number_format($totalIngresos ?? 0, 0, ',', '.') }}
-                    </div>
-                </div>
-                <div class="total-card egresos" style="flex: 1; background: #f8d7da; border-left: 5px solid #dc3545; border-radius: 10px; padding: 20px; text-align: center;">
-                    <h3 style="color: #721c24; margin-bottom: 10px;">Total Egresos</h3>
-                    <div class="value" id="totalEgresos" style="font-size: 1.5em; font-weight: bold;">
-                      ${{ number_format($totalEgresos ?? 0, 0, ',', '.') }}
-                    </div>
-                </div>
-                <div class="total-card saldo" style="flex: 1; background: #fff3cd; border-left: 5px solid #ffc107; border-radius: 10px; padding: 20px; text-align: center;">
-                    <h3 style="color: #856404; margin-bottom: 10px;">Saldo Final</h3>
-                    <div class="value" id="saldoFinal" style="font-size: 1.5em; font-weight: bold;">
-                      ${{ number_format($saldoFinal ?? 0, 0, ',', '.') }}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Formulario para guardar saldos iniciales -->
-            <form method="POST" action="{{ route('configuracion-inicial.store') }}" style="margin-bottom: 30px;">
-                @csrf
-                <input type="hidden" name="orgId" value="{{ $orgId }}">
-                <div class="form-group" style="margin-bottom:20px;">
-                    <label for="responsable"><i class="bi bi-person"></i> Responsable General</label>
-                    <input type="text" name="responsable" id="responsable" value="{{ old('responsable') }}" class="form-control" placeholder="Responsable" required>
-                </div>
-                <div class="resumen-container">
-                    <div class="resumen-card saldo-inicial">
-                        <h4>Caja General</h4>
-                        <input type="number" step="0.01" name="cuentas[caja_general][saldo_inicial]" value="{{ old('cuentas.caja_general.saldo_inicial', $cuentaCajaGeneral->saldo_inicial ?? 0) }}" class="form-control" required>
-                        <select name="cuentas[caja_general][banco_id]" class="form-control" style="margin-top:5px;" required>
-                            <option value="">Seleccione banco</option>
-                            @foreach($bancos as $banco)
-                                <option value="{{ $banco->id }}" {{ (old('cuentas.caja_general.banco_id', $cuentaCajaGeneral->banco_id ?? '') == $banco->id) ? 'selected' : '' }}>
-                                    {{ $banco->nombre }} (ID: {{ $banco->id }})
-                                </option>
-                            @endforeach
-                        </select>
-                        <input type="text" name="cuentas[caja_general][numero_cuenta]" value="{{ old('cuentas.caja_general.numero_cuenta', $cuentaCajaGeneral->numero_cuenta ?? '') }}" placeholder="N° Cuenta" class="form-control" style="margin-top:5px;">
-                    </div>
-                    <div class="resumen-card saldo-inicial">
-                        <h4>Cuenta Corriente 1</h4>
-                        <input type="number" step="0.01" name="cuentas[cuenta_corriente_1][saldo_inicial]" value="{{ old('cuentas.cuenta_corriente_1.saldo_inicial', $cuentaCorriente1->saldo_inicial ?? 0) }}" class="form-control" required>
-                        <select name="cuentas[cuenta_corriente_1][banco_id]" class="form-control" style="margin-top:5px;" required>
-                            <option value="">Seleccione banco</option>
-                            @foreach($bancos as $banco)
-                                <option value="{{ $banco->id }}" {{ (old('cuentas.cuenta_corriente_1.banco_id', $cuentaCorriente1->banco_id ?? '') == $banco->id) ? 'selected' : '' }}>
-                                    {{ $banco->nombre }} (ID: {{ $banco->id }})
-                                </option>
-                            @endforeach
-                        </select>
-                        <input type="text" name="cuentas[cuenta_corriente_1][numero_cuenta]" value="{{ old('cuentas.cuenta_corriente_1.numero_cuenta', $cuentaCorriente1->numero_cuenta ?? '') }}" placeholder="N° Cuenta" class="form-control" style="margin-top:5px;">
-                    </div>
-                    <div class="resumen-card saldo-inicial">
-                        <h4>Cuenta Corriente 2</h4>
-                        <input type="number" step="0.01" name="cuentas[cuenta_corriente_2][saldo_inicial]" value="{{ old('cuentas.cuenta_corriente_2.saldo_inicial', $cuentaCorriente2->saldo_inicial ?? 0) }}" class="form-control" required>
-                        <select name="cuentas[cuenta_corriente_2][banco_id]" class="form-control" style="margin-top:5px;" required>
-                            <option value="">Seleccione banco</option>
-                            @foreach($bancos as $banco)
-                                <option value="{{ $banco->id }}" {{ (old('cuentas.cuenta_corriente_2.banco_id', $cuentaCorriente2->banco_id ?? '') == $banco->id) ? 'selected' : '' }}>
-                                    {{ $banco->nombre }} (ID: {{ $banco->id }})
-                                </option>
-                            @endforeach
-                        </select>
-                        <input type="text" name="cuentas[cuenta_corriente_2][numero_cuenta]" value="{{ old('cuentas.cuenta_corriente_2.numero_cuenta', $cuentaCorriente2->numero_cuenta ?? '') }}" placeholder="N° Cuenta" class="form-control" style="margin-top:5px;">
-                    </div>
-                    <div class="resumen-card saldo-inicial">
-                        <h4>Cuenta de Ahorro</h4>
-                        <input type="number" step="0.01" name="cuentas[cuenta_ahorro][saldo_inicial]" value="{{ old('cuentas.cuenta_ahorro.saldo_inicial', $cuentaAhorro->saldo_inicial ?? 0) }}" class="form-control" required>
-                        <select name="cuentas[cuenta_ahorro][banco_id]" class="form-control" style="margin-top:5px;" required>
-                            <option value="">Seleccione banco</option>
-                            @foreach($bancos as $banco)
-                                <option value="{{ $banco->id }}" {{ (old('cuentas.cuenta_ahorro.banco_id', $cuentaAhorro->banco_id ?? '') == $banco->id) ? 'selected' : '' }}>
-                                    {{ $banco->nombre }} (ID: {{ $banco->id }})
-                                </option>
-                            @endforeach
-                        </select>
-                        <input type="text" name="cuentas[cuenta_ahorro][numero_cuenta]" value="{{ old('cuentas.cuenta_ahorro.numero_cuenta', $cuentaAhorro->numero_cuenta ?? '') }}" placeholder="N° Cuenta" class="form-control" style="margin-top:5px;">
-                    </div>
-                </div>
-                <div style="text-align:center; margin-top:20px;">
-                    <button type="submit" class="btn btn-success"><i class="bi bi-save"></i> Guardar Saldos Iniciales</button>
-                </div>
-            </form>
-
-            <!-- Resumen (Partial) -->
-            @include('orgs.contable.partials.resumen-saldos')
-
-            <!-- Tabla del Libro de Caja -->
-            <div class="tabla-responsive">
-                <table class="libro-caja-table">
-                    <thead>
-                        <tr>
-                            <th style="background: #4CAF50 !important; color: #fff !important;">Acciones</th>
-                            <th style="background: #4CAF50 !important; color: #fff !important;">Fecha</th>
-                            <th style="background: #4CAF50 !important; color: #fff !important;">Descripción</th>
-                            <th style="background: #4CAF50 !important; color: #fff !important;">Total Consumo</th>
-                            <th style="background: #4CAF50 !important; color: #fff !important;">Cuotas Incorporación</th>
-                            <th style="background: #4CAF50 !important; color: #fff !important;">Otros Ingresos</th>
-                            <th style="background: #4CAF50 !important; color: #fff !important;">Giros</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tablaMovimientos">
-                        <!-- Fila de Saldo Inicial -->
-                        <tr style="background: #e3f2fd; font-weight: bold;">
-                            <td style="color: #17a2b8;">Saldo Inicial</td>
-                            <td>-</td>
-                            <td>Saldo de apertura de cuentas</td>
-                            <td>{{ number_format($saldosIniciales['Caja General'] ?? 0, 0, ',', '.') }}</td>
-                            <td>{{ number_format($saldosIniciales['Cuenta Corriente 1'] ?? 0, 0, ',', '.') }}</td>
-                            <td>{{ number_format($saldosIniciales['Cuenta Corriente 2'] ?? 0, 0, ',', '.') }}</td>
-                            <td>{{ number_format($saldosIniciales['Cuenta de Ahorro'] ?? 0, 0, ',', '.') }}</td>
-                        </tr>
-                        {{-- COMENTADO: tabla movimientos eliminada --}}
-                        {{-- @forelse($movimientos as $movimiento)
-                            <tr>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary" title="Editar">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                </td>
-                                <td>{{ $movimiento->fecha }}</td>
-                                <td>{{ $movimiento->descripcion }}</td>
-                                <td>{{ number_format($movimiento->total_consumo ?? 0, 0, ',', '.') }}</td>
-                                <td>{{ number_format($movimiento->cuotas_incorporacion ?? 0, 0, ',', '.') }}</td>
-                                <td>{{ number_format($movimiento->otros_ingresos ?? 0, 0, ',', '.') }}</td>
-                                <td>{{ number_format($movimiento->giros ?? 0, 0, ',', '.') }}</td>
-                            </tr>
-                        @empty --}}
-                            <tr class="sin-movimientos">
-                                <td colspan="7">
-                                    <i class="bi bi-inbox" style="font-size: 24px; margin-bottom: 10px; display: block;"></i>
-                                    {{-- No hay movimientos registrados --}}
-                                    Módulo de movimientos temporalmente deshabilitado
-                                </td>
-                            </tr>
-                        {{-- @endforelse --}}
-                    </tbody>
-                </table>
-            </div>
         </div>
-
-        <!-- Enlaces Rápidos -->
-        <div class="card">
-            <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                <h3><i class="bi bi-lightning"></i> Acciones Rápidas</h3>
-            </div>
-            <div class="btn-group">
-                @if(isset($orgId) && $orgId)
-                    <a href="{{ route('orgs.ingresos.index', ['id' => $orgId]) }}" class="btn btn-success">
-                        <i class="bi bi-plus-circle"></i> Registrar Ingreso
-                    </a>
-                    <a href="{{ route('orgs.egresos.index', ['id' => $orgId]) }}" class="btn btn-info">
-                        <i class="bi bi-dash-circle"></i> Registrar Egreso
-                    </a>
-                    <a href="{{ route('orgs.contable.giros.depositos', ['id' => $orgId]) }}" class="btn btn-info">
-                        <i class="bi bi-arrow-left-right"></i> Giros y Depósitos
-                    </a>
-                @else
-                    <span class="text-danger">No se puede mostrar acciones rápidas: falta el identificador de organización.</span>
-                @endif
-                <button id="btnExportarExcel" class="btn btn-success">
-                    <i class="bi bi-file-earmark-excel"></i> Exportar Excel
-                </button>
-            </div>
+        
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th colspan="8" class="ingresos-header">Entradas Ingresos</th>
+                        <th colspan="9" class="egresos-header">Salidas Egresos</th>
+                    </tr>
+                    <tr>
+                        
+                        <th>Fecha</th>
+                        <th>Descripción</th>
+                        <th>Total Consumo</th>
+                        <th>Cuotas Incorporación</th>
+                        <th>Otros Ingresos</th>
+                        <th>Giros</th>
+                        <th>TOTAL INGRESOS</th>
+                        <th>Energía Eléctrica</th>
+                        <th>Sueldos y Leyes Sociales</th>
+                        <th>Gastos de Operación</th>
+                        <th>Gastos de Mantención</th>
+                        <th>Gastos de Administración</th>
+                        <th>Gastos de Mejoramiento</th>
+                        <th>Otros Gastos</th>
+                        <th>Depósitos</th>
+                        <th>TOTAL EGRESOS</th>
+                    </tr>
+                </thead>
+                <tbody>
+          @foreach($movimientos as $movimiento)
+          <tr>
+                        <td>{{ date('d/m/Y', strtotime($movimiento->fecha)) }}</td>
+            <td style="text-align: left;">{{ $movimiento->descripcion }}</td>
+            <!-- INGRESOS -->
+            <td class="{{ ($movimiento->tipo == 'ingreso' && $movimiento->grupo == 'Total Consumo') ? 'ingreso-cell' : '' }}">
+              {{ ($movimiento->tipo == 'ingreso' && $movimiento->grupo == 'Total Consumo') ? '$' . number_format((float)$movimiento->monto, 0, ',', '.') : '' }}
+            </td>
+            <td class="{{ ($movimiento->tipo == 'ingreso' && $movimiento->grupo == 'Cuotas Incorporación') ? 'ingreso-cell' : '' }}">
+              {{ ($movimiento->tipo == 'ingreso' && $movimiento->grupo == 'Cuotas Incorporación') ? '$' . number_format((float)$movimiento->monto, 0, ',', '.') : '' }}
+            </td>
+            <td class="{{ ($movimiento->tipo == 'ingreso' && $movimiento->grupo == 'Otros Ingresos') ? 'ingreso-cell' : '' }}">
+              {{ ($movimiento->tipo == 'ingreso' && $movimiento->grupo == 'Otros Ingresos') ? '$' . number_format((float)$movimiento->monto, 0, ',', '.') : '' }}
+            </td>
+            <!-- GIROS: mostrar columna giros -->
+            <td class="ingreso-cell">
+              {{ $movimiento->giros > 0 ? '$' . number_format((float)$movimiento->giros, 0, ',', '.') : '' }}
+            </td>
+            <td class="ingreso-cell" style="font-weight: bold;">
+              @if($movimiento->tipo == 'ingreso')
+                ${{ number_format((float)$movimiento->monto, 0, ',', '.') }}
+              @endif
+            </td>
+            <!-- EGRESOS -->
+            <td class="{{ ($movimiento->tipo == 'egreso' && $movimiento->grupo == 'Energía Eléctrica') ? 'egreso-cell' : '' }}">
+              {{ ($movimiento->tipo == 'egreso' && $movimiento->grupo == 'Energía Eléctrica') ? '$' . number_format((float)$movimiento->monto, 0, ',', '.') : '' }}
+            </td>
+            <td class="{{ ($movimiento->tipo == 'egreso' && $movimiento->grupo == 'Sueldos y Leyes Sociales') ? 'egreso-cell' : '' }}">
+              {{ ($movimiento->tipo == 'egreso' && $movimiento->grupo == 'Sueldos y Leyes Sociales') ? '$' . number_format((float)$movimiento->monto, 0, ',', '.') : '' }}
+            </td>
+            <td class="{{ ($movimiento->tipo == 'egreso' && $movimiento->grupo == 'Gastos de Operación') ? 'egreso-cell' : '' }}">
+              {{ ($movimiento->tipo == 'egreso' && $movimiento->grupo == 'Gastos de Operación') ? '$' . number_format((float)$movimiento->monto, 0, ',', '.') : '' }}
+            </td>
+            <td class="{{ ($movimiento->tipo == 'egreso' && $movimiento->grupo == 'Gastos de Mantención') ? 'egreso-cell' : '' }}">
+              {{ ($movimiento->tipo == 'egreso' && $movimiento->grupo == 'Gastos de Mantención') ? '$' . number_format((float)$movimiento->monto, 0, ',', '.') : '' }}
+            </td>
+            <td class="{{ ($movimiento->tipo == 'egreso' && $movimiento->grupo == 'Gastos de Administración') ? 'egreso-cell' : '' }}">
+              {{ ($movimiento->tipo == 'egreso' && $movimiento->grupo == 'Gastos de Administración') ? '$' . number_format((float)$movimiento->monto, 0, ',', '.') : '' }}
+            </td>
+            <td class="{{ ($movimiento->tipo == 'egreso' && $movimiento->grupo == 'Gastos de Mejoramiento') ? 'egreso-cell' : '' }}">
+              {{ ($movimiento->tipo == 'egreso' && $movimiento->grupo == 'Gastos de Mejoramiento') ? '$' . number_format((float)$movimiento->monto, 0, ',', '.') : '' }}
+            </td>
+            <td class="{{ ($movimiento->tipo == 'egreso' && $movimiento->grupo == 'Otros Gastos') ? 'egreso-cell' : '' }}">
+              {{ ($movimiento->tipo == 'egreso' && $movimiento->grupo == 'Otros Gastos') ? '$' . number_format((float)$movimiento->monto, 0, ',', '.') : '' }}
+            </td>
+            <!-- DEPÓSITOS: mostrar columna depositos -->
+            <td class="egreso-cell">
+              {{ $movimiento->depositos > 0 ? '$' . number_format((float)$movimiento->depositos, 0, ',', '.') : '' }}
+            </td>
+            <td class="egreso-cell" style="font-weight: bold;">
+              @if($movimiento->tipo == 'egreso')
+                ${{ number_format((float)$movimiento->monto, 0, ',', '.') }}
+              @endif
+            </td>
+          </tr>
+          @endforeach
+                </tbody>
+            </table>
         </div>
     </div>
-        </div>
-    </div>
+    
+  <!-- Botón de retorno eliminado -->
 </div>
-
 @endsection

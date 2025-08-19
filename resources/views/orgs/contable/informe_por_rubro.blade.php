@@ -6,7 +6,12 @@
 @include('orgs.contable.partials.contable-styles')
 
 <!-- Bootstrap Icons -->
+
+<!-- Bootstrap Icons -->
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+
+<!-- SheetJS para exportar a Excel -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 <style>
 /* Variables basadas en balance.blade.php */
@@ -500,6 +505,9 @@
         <button class="btn-balance-primary" onclick="actualizarDatos()">
           <i class="bi bi-arrow-clockwise"></i> Actualizar
         </button>
+        <button class="btn-balance-danger" style="background:linear-gradient(135deg,#e53e3e 0%,#c53030 100%);color:#fff;border:none;padding:12px 25px;font-size:16px;font-weight:700;border-radius:12px;box-shadow:0 4px 12px rgba(229,62,62,0.2);display:inline-flex;align-items:center;gap:10px;transition:all 0.2s;height:48px;min-height:48px;" onmouseover="this.style.background='#c53030'" onmouseout="this.style.background='linear-gradient(135deg,#e53e3e 0%,#c53030 100%)'" onclick="imprimirInformeRubro()">
+          <i class="bi bi-printer" style="font-size:20px;"></i> Imprimir
+        </button>
       </div>
     </div>
 
@@ -647,5 +655,118 @@
   </div>
 </div>
 
-<!-- Eliminado: toda la lógica JS y localStorage. Ahora los datos se muestran desde el backend usando Blade. -->
+
+@push('scripts')
+<script>
+function imprimirInformeRubro() {
+  // Construir una ventana con formato profesional
+  var win = window.open('', '', 'width=1000,height=900');
+  win.document.write('<html><head><title>Informe por Rubro</title>');
+  win.document.write('<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">');
+  win.document.write('<style>body{font-family:sans-serif;padding:40px;} h1{font-size:2.2rem;margin-bottom:10px;} h2{font-size:1.3rem;margin-top:30px;} table{width:100%;border-collapse:collapse;margin-bottom:30px;} th,td{border:1px solid #ccc;padding:8px;} th{background:#f8f9fa;} .indicadores{margin-bottom:30px;} .indicadores td{font-weight:bold;} .rubro-titulo{font-weight:bold;font-size:1.1rem;} .rubro-total{color:#2c5282;font-weight:bold;} .rubro-mov{font-size:0.95rem;color:#555;} .separador{margin:30px 0;}</style>');
+  win.document.write('</head><body>');
+  win.document.write('<h1>Informe por Rubro</h1>');
+  win.document.write('<div class="indicadores">');
+  win.document.write('<table><tr><th>Indicador</th><th>Valor</th></tr>');
+  win.document.write('<tr><td>Total Ingresos</td><td>$'+@json($ingresosTotales)+'</td></tr>');
+  win.document.write('<tr><td>Total Egresos</td><td>$'+@json($egresosTotales)+'</td></tr>');
+  win.document.write('<tr><td>Total Operaciones</td><td>$'+@json($operacionesTotal)+'</td></tr>');
+  win.document.write('<tr><td>Total Administración</td><td>$'+@json($administracionTotal)+'</td></tr>');
+  win.document.write('<tr><td>Saldo</td><td>$'+(@json($ingresosTotales)-@json($egresosTotales))+'</td></tr>');
+  win.document.write('</table></div>');
+  win.document.write('<div class="separador"></div>');
+  win.document.write('<h2>Ingresos por Rubro</h2>');
+  win.document.write('<table><tr><th>Rubro</th><th>Total</th><th>Movimientos</th></tr>');
+  @json($rubrosIngresos).forEach(function(r){
+    win.document.write('<tr><td class="rubro-titulo">'+r.nombre+'</td><td class="rubro-total">$'+r.total+'</td><td>');
+    if(r.movimientos && r.movimientos.length){
+      r.movimientos.forEach(function(m){
+        win.document.write('<div class="rubro-mov">'+m.fecha+': $'+m.monto+' ('+(m.descripcion||'')+')</div>');
+      });
+    } else {
+      win.document.write('Sin movimientos');
+    }
+    win.document.write('</td></tr>');
+  });
+  win.document.write('</table>');
+  win.document.write('<div class="separador"></div>');
+  win.document.write('<h2>Egresos por Rubro</h2>');
+  win.document.write('<table><tr><th>Rubro</th><th>Total</th><th>Movimientos</th></tr>');
+  @json($rubrosEgresos).forEach(function(r){
+    win.document.write('<tr><td class="rubro-titulo">'+r.nombre+'</td><td class="rubro-total">$'+r.total+'</td><td>');
+    if(r.movimientos && r.movimientos.length){
+      r.movimientos.forEach(function(m){
+        win.document.write('<div class="rubro-mov">'+m.fecha+': $'+m.monto+' ('+(m.descripcion||'')+')</div>');
+      });
+    } else {
+      win.document.write('Sin movimientos');
+    }
+    win.document.write('</td></tr>');
+  });
+  win.document.write('</table>');
+  win.document.write('</body></html>');
+  win.document.close();
+  win.focus();
+  win.print();
+  win.close();
+}
+
+function exportarInforme() {
+  // Datos principales desde Blade
+  const ingresos = @json($rubrosIngresos);
+  const egresos = @json($rubrosEgresos);
+  const operacionesTotal = @json($operacionesTotal);
+  const administracionTotal = @json($administracionTotal);
+  const ingresosTotales = @json($ingresosTotales);
+  const egresosTotales = @json($egresosTotales);
+
+  // Hoja resumen de indicadores
+  const hojaResumen = [
+    ['Indicador', 'Valor'],
+    ['Total Ingresos', ingresosTotales],
+    ['Total Egresos', egresosTotales],
+    ['Total Operaciones', operacionesTotal],
+    ['Total Administración', administracionTotal],
+    ['Saldo', ingresosTotales - egresosTotales],
+    ['% Operaciones sobre Ingresos', ingresosTotales > 0 ? (operacionesTotal / ingresosTotales * 100).toFixed(2) + '%' : '0%'],
+    ['% Administración sobre Ingresos', ingresosTotales > 0 ? (administracionTotal / ingresosTotales * 100).toFixed(2) + '%' : '0%'],
+  ];
+
+  // Detalle por rubro (ingresos)
+  const hojaIngresos = [
+    ['Rubro', 'Total', 'Cantidad de Movimientos', 'Movimientos'],
+  ];
+  ingresos.forEach(r => {
+    hojaIngresos.push([
+      r.nombre,
+      r.total,
+      r.movimientos ? r.movimientos.length : 0,
+      r.movimientos ? r.movimientos.map(m => `${m.fecha}: $${m.monto} (${m.descripcion || ''})`).join('\n') : ''
+    ]);
+  });
+
+  // Detalle por rubro (egresos)
+  const hojaEgresos = [
+    ['Rubro', 'Total', 'Cantidad de Movimientos', 'Movimientos'],
+  ];
+  egresos.forEach(r => {
+    hojaEgresos.push([
+      r.nombre,
+      r.total,
+      r.movimientos ? r.movimientos.length : 0,
+      r.movimientos ? r.movimientos.map(m => `${m.fecha}: $${m.monto} (${m.descripcion || ''})`).join('\n') : ''
+    ]);
+  });
+
+  // Crear workbook y hojas
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(hojaResumen), 'Resumen');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(hojaIngresos), 'Ingresos');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(hojaEgresos), 'Egresos');
+
+  // Exportar
+  XLSX.writeFile(wb, 'informe_por_rubro_completo.xlsx');
+}
+</script>
+@endpush
 @endsection
