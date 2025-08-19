@@ -205,6 +205,7 @@ tbody tr:hover {
   </div>
   
   <div class="conciliacion-grid">
+                    ${{ number_format((float)$movimiento->monto, 0, ',', '.') }}
       <h3><i class="bi bi-journal-check"></i> Movimientos Registrados</h3>
       <div class="table-container">
         <table>

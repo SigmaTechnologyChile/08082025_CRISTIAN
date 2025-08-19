@@ -657,6 +657,10 @@
 
 @include('orgs.contable.partials.contable-styles')
 
+<!-- Botón Volver -->
+<button class="btn-volver" onclick="window.history.back()" title="Volver a la página anterior">
+  <i class="bi bi-arrow-left"></i> Volver
+</button>
 
 <!-- Header y Sidebar si se requiere -->
 

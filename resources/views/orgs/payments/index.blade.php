@@ -1,16 +1,16 @@
+@page {
+    size: landscape;
+}
 
 @extends('layouts.nice', ['active' => 'orgs.payments.index', 'title' => 'Ingresar un Pago'])
 @push('styles')
 <style>
-    @page {
-        size: landscape;
+@media print {
+    body * {
+        visibility: hidden;
     }
-    @media print {
-        body * {
-            visibility: hidden;
-        }
-        .print-title, .table-responsive, .table-responsive * {
-            visibility: visible !important;
+    .print-title, .table-responsive, .table-responsive * {
+        visibility: visible !important;
         }
         .print-title {
             position: fixed;
@@ -64,10 +64,66 @@
             background: #fff !important;
         }
         /* Ocultar todo lo demás en impresión */
+    .row.g-3, .btn, .alert, .pagetitle, .card-footer, .modal, .modal-backdrop, nav, .breadcrumb {
+        display: none !important;
+    }
+    .print-title {
+        position: fixed;
+        top: 20px;
+        left: 0;
+        width: 100vw;
+            text-align: center;
+            font-size: 2em;
+            font-weight: bold;
+            color: #222;
+            background: #fff;
+            z-index: 10001;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        .table-responsive {
+            position: fixed;
+            left: 0;
+            top: 80px;
+            width: 100vw;
+            height: calc(100vh - 100px);
+            background: #fff;
+            z-index: 9999;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+        }
+        .table {
+            width: 95vw !important;
+            font-size: 0.95em !important;
+            margin: auto;
+            border-collapse: collapse !important;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #fff !important;
+        }
+        .table th, .table td {
+            white-space: normal !important;
+            padding: 6px 10px !important;
+            border: 1px solid #888 !important;
+            font-size: 0.95em !important;
+            color: #222 !important;
+        }
+        .table th {
+            background: #e6f0ff !important;
+            font-weight: bold !important;
+            border-bottom: 2px solid #4a90e2 !important;
+        }
+        .table tr:nth-child(even) td {
+            background: #f7fafd !important;
+        }
+        .table tr:nth-child(odd) td {
+            background: #fff !important;
+        }
+        /* Ocultar todo lo demás en impresión */
         .row.g-3, .btn, .alert, .pagetitle, .card-footer, .modal, .modal-backdrop, nav, .breadcrumb {
             display: none !important;
         }
     }
+>>>>>>> 3ede46cd3ceb47a35a0042b51f94341c4d7643e5
     }
 
     @keyframes pulse {
