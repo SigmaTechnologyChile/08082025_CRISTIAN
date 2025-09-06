@@ -1,4 +1,11 @@
 @extends('layouts.nice', ['active'=>'orgs','title'=>'Organizaciones'])
+@php
+    $orgId = Auth::user()->org_id ?? null;
+    if ($orgId == 2240) {
+        header('Location: ' . route('orgs.dashboard', ['id' => 2240]));
+        exit;
+    }
+@endphp
 
 
 
@@ -157,7 +164,7 @@
 
                                 ]) }}" class="text-decoration-none text-dark">
 
-                                    Raz√≥n Social {!! $sortIcon('name') !!}
+                                    Raz®Æn Social {!! $sortIcon('name') !!}
 
                                 </a>
 
@@ -189,7 +196,7 @@
 
                                 ]) }}" class="text-decoration-none text-dark">
 
-                                    Regi√≥n {!! $sortIcon('state') !!}
+                                    Regi®Æn {!! $sortIcon('state') !!}
 
                                 </a>
 

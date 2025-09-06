@@ -705,12 +705,12 @@
    <script>
 
         // Botón cerrar para ocultar el registro de lecturas
-
-        document.getElementById('closeReading').addEventListener('click', function() {
-
-            document.querySelector('.reading-container').style.display = 'none';
-
-        });
+        const closeBtn = document.getElementById('closeReading');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function() {
+                document.querySelector('.reading-container').style.display = 'none';
+            });
+        }
 
         // Función mejorada para guardar lecturas en la base de datos con actualización inmediata
 

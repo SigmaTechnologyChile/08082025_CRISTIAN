@@ -239,17 +239,7 @@
 
 
 
-        <div class="search-bar d-print-none">
-
-            <form class="search-form d-flex align-items-center" method="POST" action="#">
-
-                <input type="text" name="query" placeholder="Busqueda general" title="Enter search keyword">
-
-                <button type="submit" title="Search"><i class="bi bi-search"></i></button>
-
-            </form>
-
-        </div><!-- End Search Bar -->
+        <!-- End Search Bar Insertar un texto-->
 
 
 
@@ -472,18 +462,7 @@
 
                         @if($user->isSuperAdmin() || $user->isAdmin())
 
-                            <li>
-
-                                <a class="dropdown-item d-flex align-items-center"
-                                    href="{{route('orgs.accounts.crearUsuario', ['id' => auth()->user()->org_id])}}">
-
-                                    <i class="bi bi-person"></i>
-
-                                    <span>Crear Usuario</span>
-
-                                </a>
-
-                            </li>
+                           
 
                         @endif
 
@@ -533,19 +512,16 @@
 
     <aside id="sidebar" class="sidebar d-print-none">
 
-        @php
-
-            $planId = Auth::user()->plan_id;
-
-            $esencial = in_array($planId, [0]);
-
-            $intermedio = in_array($planId, [1]);
-
-            $avanzado = in_array($planId, [2]);
+                        @php
+                            $orgId = Auth::user()->org_id ?? null;
+                        @endphp
+                        @if(($user->isSuperAdmin() || $user->isAdmin()) && $orgId != 2240)
+                            
+                        @endif
 
 
 
-          @endphp
+          {{-- @endphp --}}
 
         @php
 
@@ -563,7 +539,8 @@
 
                 @if(Request::is('org/*'))
 
-                    {{-- Repite aquí TODO el menú completo de org/* (Accesos Directos + Módulos) --}}
+                    {{-- Repite aquí TODO el menú completo de org/* (
+                     + Módulos) --}}
 
                     <li class="nav-heading">Accesos Directos</li>
 
@@ -572,7 +549,7 @@
                         <a href="{{ route('orgs.dashboard', ['id' => auth()->user()->org_id]) }}"
                             class="nav-link {{ (isset($active) && $active == 'orgs.dashboard') ? '' : 'collapsed' }}">
 
-                            <i class="bi bi-speedometer2" style="color: orange;"></i><span>Dashboard</span>
+                            <i class="bi bi-bar-chart" style="color: orange;"></i><span>Dashboard</span>
 
                         </a>
 
@@ -920,8 +897,8 @@
                         <a class="nav-link {{ $contableActive ? '' : 'collapsed' }}" data-bs-target="#contable-nav"
                             data-bs-toggle="collapse" href="#">
 
-                            <i class="bi bi-card-checklist" style="color: blue;"></i><span>CONTABLE </span><i
-                                class="bi bi-chevron-down ms-auto"></i>
+                                <i class="bi bi-card-checklist" style="color: red;"></i><span>CONTABLE </span><i
+                                    class="bi bi-chevron-down ms-auto"></i>
 
                         </a>
 
@@ -1514,8 +1491,8 @@
                         <a class="nav-link {{ $contableActive ? '' : 'collapsed' }} disabled text-muted" tabindex="-1"
                             aria-disabled="true" data-bs-target="#contable-nav" data-bs-toggle="collapse" href="#">
 
-                            <i class="ri-bill-line ri-bill-line-lock"></i><span>CONTABLE <i
-                                    class="bi bi-lock fs-6"></i></span><i class="bi bi-chevron-down ms-auto"></i>
+                <i class="ri-bill-line ri-bill-line-lock" style="color: red;"></i><span>CONTABLE <i
+                    class="bi bi-lock fs-6"></i></span><i class="bi bi-chevron-down ms-auto"></i>
 
                         </a>
 

@@ -12,11 +12,11 @@
       </nav>
     </div><!-- End Page Title -->
     
-    <!-- Filtros de A�0�9o y Mes -->
+    <!-- Filtros de Año y Mes -->
 <div class="filters mb-4">
     <form method="GET" action="{{ route('orgs.dashboard', $org->id) }}">
         <div class="row g-3 align-items-end"> <!-- Cambio clave: align-items-end -->
-            <!-- Filtro de A�0�9o -->
+            <!-- Filtro de Año-->
             <div class="col-md-4">
                 <label for="year" class="form-label mb-1">📅 Año</label> <!-- mb-1 para reducir espacio -->
                 <select id="year" name="year" class="form-select"> <!-- Cambiado a form-select -->
@@ -33,7 +33,7 @@
                 </select>
             </div>
 
-            <!-- Bot��n de filtrado - Correcci��n: eliminado mt-4 y ajustada alineaci��n -->
+            <!-- Botónn de filtrado - Corrección: eliminado mt-4 y ajustada alineación -->
             <div class="col-md-4">
                 <button type="submit" class="btn btn-primary">Filtrar</button>
             </div>

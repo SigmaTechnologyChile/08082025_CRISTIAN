@@ -5,8 +5,8 @@
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <title>Bienvenidos - HydroSite</title>
-    <meta name="description" content="RedERP Colaborativo">
-    <meta name="keywords" content="RedERP, colaborativo">
+    <meta name="description" content="Software APR-SSR">
+    <meta name="keywords" content="Software APR-SSR">
 
     <!-- Favicons -->
     <link href="{{asset('theme/common/img/favicon.png')}}" rel="icon">
